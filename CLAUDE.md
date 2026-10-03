@@ -22,6 +22,10 @@ still being made. Update them as they settle rather than working around them.
   good until the trash is **emptied by hand**; no automatic expiry.
 - **Login:** one password, no usernames. A successful login sets a long-lived cookie so each device
   only logs in once.
+- **Downloader:** paste a URL and pick a destination folder; the server fetches the file and saves
+  it there, with progress shown in the UI. The download runs server-side, so it keeps going when the
+  browser tab closes. _(open: plain HTTP(S) only, or also yt-dlp-style site support? A queue with
+  several downloads at once?)_
 - **No sharing.** No public links, no second user, no permissions model. Don't add one.
 
 ## Git workflow
@@ -120,6 +124,17 @@ held to a higher bar than the rest of the code:
 _(open: storage layout. The likely answer, following imgy, is that real folders on disk are the
 source of truth and SQLite only holds metadata — tags, trash records, settings — keyed by path, so
 a move or rename must update those rows in the same request.)_
+
+### The downloader fetches URLs on the server's behalf
+
+That makes it the one place where Binny reaches out to the network, so:
+
+- Stream the response to a temp file in the destination's filesystem and rename into place, the
+  same as an upload. Never buffer it in memory.
+- Take the filename from `Content-Disposition` or the URL, then run it through the same
+  path-safety check as an upload; never let the remote server choose the path.
+- Cap the size and set connect/read timeouts so one bad URL can't fill the disk or hang a worker.
+- Run it off the request thread (it can take minutes), and keep its state where the UI can poll it.
 
 ### Access
 
