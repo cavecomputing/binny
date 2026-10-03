@@ -172,7 +172,7 @@ held to a higher bar than the rest of the code:
 ```
 data/                 # BINNY_DATA_DIR, default ./data
 ├── files/            # the user's files, as ordinary files and folders
-├── trash/            # trashed items, outside files/ so they don't show up there
+│   └── .trash/       # trashed items, hidden
 └── binny.db          # SQLite: tags, trash records, settings
 ```
 
@@ -194,8 +194,10 @@ data/                 # BINNY_DATA_DIR, default ./data
 - Because rows are keyed by path, anything the database knows about a file must survive the file
   disappearing or appearing from outside the app. A move or rename through the app updates its rows in the same request; a row whose file is
   gone is stale, not an error.
-- _(open: trash lives in `data/trash/` by default, so trashed items stay off the user's own view of
-  `data/files/`; confirm.)_
+- **Trash is `data/files/.trash/`.** The app hides it (and every dot-folder) from listings, tag
+  search and folder totals, and never lets an upload, move, rename or download target it except
+  through the trash routes. Trashed items keep their tags and remember their original path so
+  restore can put them back.
 
 ### The downloader fetches URLs on the server's behalf
 
