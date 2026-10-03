@@ -110,7 +110,7 @@ uv run pytest                                  # full suite (use `uv run`, not b
 uv run pytest tests/test_auth.py::test_sign_out -x
 node --check binny/static/js/<file>.js         # frontend syntax check; there is no JS test suite
 
-docker compose -f docker/compose.yml up --build
+docker compose -f docker/compose.yml up --build   # BINNY_PASSWORD goes in docker/.env
 ```
 
 The app refuses to start without `BINNY_PASSWORD`, including `uv run app.py --help`.
@@ -156,7 +156,7 @@ neighbour.
 | `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
-| `docker/` | Dockerfile and `compose.yml`, as in imgy. |
+| `docker/` | `Dockerfile`, `compose.yml` and `entrypoint.sh`, as in imgy: gunicorn with one gthread worker on port 5002, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
 
 Fill in the "Owns" column with real names as modules land, and add the rules the code can't tell
 you on its own under it:

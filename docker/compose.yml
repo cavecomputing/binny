@@ -1,0 +1,19 @@
+name: binny
+
+# Relative paths here start from this folder: the build context and ../data are the repo root's.
+# BINNY_PASSWORD (and PUID/PGID, the owner of ../data) come from the environment or docker/.env.
+services:
+  binny:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: binny
+    ports:
+      - "127.0.0.1:5002:5002"
+    volumes:
+      - ../data:/data
+    restart: unless-stopped
+    environment:
+      - BINNY_PASSWORD=${BINNY_PASSWORD:?Set BINNY_PASSWORD in docker/.env or the environment}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
