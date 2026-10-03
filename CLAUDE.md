@@ -85,6 +85,7 @@ pytest, Docker. _(open: the app and test commands are placeholders until the app
 ```bash
 uv sync                               # install the locked dependencies into .venv
 uv run app.py --debug                 # dev server
+BINNY_PASSWORD=changeme uv run app.py       # the password is required
 BINNY_DATA_DIR=/path/to/data uv run app.py   # custom data directory (default: ./data)
 
 uv run pytest                         # full suite (use `uv run`, not bare pytest)
@@ -120,7 +121,7 @@ neighbour.
 | `app.py` | Entry point, and the **only** Python file at the repo root: `app = create_app()`, which `uv run app.py` and `gunicorn app:app` both name. No logic lives here. |
 | `binny/` | The application package. Everything else in Python goes in here. |
 | `binny/__init__.py` | `create_app()`: config, the login guard, `init_db()`, blueprint registration. |
-| `binny/config.py` | Paths and limits, read once from the environment (`BINNY_DATA_DIR`, the password). |
+| `binny/config.py` | Paths and limits, read once from the environment (`BINNY_DATA_DIR`, `BINNY_PASSWORD`). |
 | `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`. |
 | `binny/storage.py` | The one place that turns a user-supplied path into a real one (`safe_path()`), plus file walking. |
 | `binny/api/` | One Flask blueprint per resource — `files`, `folders`, `tags`, `trash`, `downloads`, `auth` — all under `/api`. |
@@ -149,6 +150,16 @@ you on its own under it.
   (`accent-text`) for focus, selection and active rows; green (`accent-alt`) for the brand and
   section icons; aqua for done; blue (`accent-cool`) for paths and links; orange (`accent-warm`) for
   anything destructive. There is no red. No web fonts: system mono and sans only.
+- **Dark is the default theme**, whatever the OS prefers. The choice lives in `localStorage`
+  (`binny-theme`), so each device keeps its own; never sync it through the server. Apply it in a
+  tiny inline script in `<head>` before the stylesheet paints, so a light-theme device doesn't
+  flash dark on load. Wrap storage access in `try` so a blocked `localStorage` still gets dark.
+- **Logo and favicon match the sibling apps** (cozy, imgy, campfire) so they sit together in a tab
+  bar: a `#282828` rounded square with a 24px stroked line icon in one Gruvbox accent, 2.2 stroke,
+  round caps. Binny's is a folder in aqua (`#8ec07c`) — cozy is yellow, imgy green, campfire
+  orange. [binny/static/favicon.svg](binny/static/favicon.svg) is the source and `favicon.png`
+  (256px) is rendered from it; change both together. The top-left brand is the same folder icon
+  in `accent-aqua` beside the `cc-wordmark`.
 - The [interface mockup](https://claude.ai/artifact/7KsCx3jSnVbB6tydGm55db) is the reference for layout: the "+" split button (click uploads files;
   the arrow opens "Upload from link"), folder and tag sidebar, file table with tag chips, trash
   view, downloads panel, sign-in card.
@@ -217,8 +228,10 @@ it still has a login because anything on the tailnet can reach it.
 
 - **Every route except the login page and its static assets requires the session cookie**,
   including file downloads and thumbnails. A new route is behind the check by default, not opted in.
-- The password comes from the environment (or a hash of it in the data directory), never from a
-  file in the repo. Compare it in constant time.
+- The password is the `BINNY_PASSWORD` environment variable, so a Docker container sets it in
+  `compose.yml` or an `.env` file. Never store it in the repo, the database or the data directory.
+  Refuse to start when it is unset or empty rather than running without a login. Compare it in
+  constant time.
 - The cookie is `HttpOnly`, `SameSite=Lax`, and long-lived (months), so a device stays logged in.
   _(open: how to log every device out — rotating the secret key is the simplest answer.)_
 - Behind Caddy, honour `X-Forwarded-Proto` only from the proxy so `Secure` cookies and redirects
