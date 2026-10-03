@@ -184,7 +184,7 @@ mark { background: none; color: var(--accent-text); font-weight: 700; }
 .nav .cc-shell__row:hover { background: var(--border); color: var(--fg); }
 .nav .cc-shell__row[aria-current] { background: var(--border); color: var(--accent-text); }
 .nav .cc-shell__row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav .count { margin-left: auto; font-size: 11px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.nav .count { flex: none; margin-left: auto; font-size: 11px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
 .nav button.cc-shell__row { width: 100%; border: 0; background: none; text-align: left; }
 .tree-row { display: flex; align-items: center; padding-left: calc(var(--depth) * 14px); }
 .tree-row .cc-shell__row { flex: 1; padding-left: 2px; }
