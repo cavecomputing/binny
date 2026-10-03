@@ -167,9 +167,26 @@ held to a higher bar than the rest of the code:
 - Delete means **move to trash**. Only "Empty trash" (and deleting a single item from inside the
   trash) removes a file for good, and both ask for confirmation in the UI.
 
-_(open: storage layout. The likely answer, following imgy, is that real folders on disk are the
-source of truth and SQLite only holds metadata — tags, trash records, settings — keyed by path, so
-a move or rename must update those rows in the same request.)_
+### Data lives in two places
+
+```
+data/                 # BINNY_DATA_DIR, default ./data
+├── files/            # the user's files, as ordinary files and folders
+├── trash/            # trashed items, outside files/ so they don't show up there
+└── binny.db          # SQLite: tags, trash records, settings
+```
+
+- **`data/files/` is the source of truth.** It is a plain folder tree the user can open in any file
+  manager, so the app's folders are real folders and a file's name on disk is its name in the app.
+  Never rename, hash or wrap files for the app's convenience. Files added, moved or deleted outside
+  the app show up on the next listing; the app must cope with that rather than assume it owns the
+  tree.
+- **`data/binny.db` holds only metadata**, keyed by the path relative to `data/files/`. Anything
+  the database knows about a file must survive the file disappearing or appearing from outside the
+  app. A move or rename through the app updates its rows in the same request; a row whose file is
+  gone is stale, not an error.
+- _(open: trash lives in `data/trash/` by default, so trashed items stay off the user's own view of
+  `data/files/`; confirm.)_
 
 ### The downloader fetches URLs on the server's behalf
 
