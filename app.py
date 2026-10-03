@@ -1,0 +1,18 @@
+"""Binny entry point.
+
+Development: BINNY_PASSWORD=... uv run app.py [--debug] [--host 0.0.0.0] [--port 5002]
+Production:  gunicorn --workers 1 --worker-class gthread --threads 16 app:app (see docker/)
+"""
+import argparse
+
+from binny import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Run the Binny development server.')
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', type=int, default=5002)
+    parser.add_argument('--debug', action='store_true', help='auto-reload and the debugger')
+    args = parser.parse_args()
+    app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)

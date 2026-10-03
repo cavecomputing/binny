@@ -1,0 +1,149 @@
+/* Binny on the cavecomputing design system.
+   Tokens: Gruvbox dark on :root (the default on every device), Gruvbox light on [data-theme="light"].
+   Accents keep one meaning everywhere: yellow --accent-text for focus, selection and active rows,
+   green --accent-alt for the brand and section icons, aqua for done, blue --accent-cool for paths
+   and links, orange --accent-warm for anything destructive. There is no red.
+   The design system's own components (cc-*) live in cavecomputing.css. */
+
+:root {
+    --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --space-1: 6px;
+    --space-2: 10px;
+    --space-3: 16px;
+    --space-4: 24px;
+    --space-5: 36px;
+    --shell-gap: 10px;
+    --app-space-1: 4px;
+    --app-space-2: 6px;
+    --app-space-3: 8px;
+    --app-space-4: 12px;
+    --app-space-5: 16px;
+    --app-space-6: 24px;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+
+    --bg-page: #1d2021;
+    --bg-surface: #282828;
+    --bg-raised: #32302f;
+    --bg-inset: #3c3836;
+    --border: #3c3836;
+    --border-soft: #32302f;
+    --fg: #ebdbb2;
+    --fg-muted: #a89984;
+    --fg-subtle: #7c6f64;
+    --accent: #fabd2f;
+    --accent-text: #fabd2f;
+    --accent-alt: #b8bb26;
+    --accent-cool: #83a598;
+    --accent-warm: #fe8019;
+    --accent-rose: #d3869b;
+    --accent-aqua: #8ec07c;
+    --accent-aqua-text: #8ec07c;
+    --btn-bg: #fabd2f;
+    --btn-fg: #1d2021;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.22);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.30), 0 4px 12px rgba(0, 0, 0, 0.20);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.32), 0 12px 28px rgba(0, 0, 0, 0.34);
+    --scrim: rgba(29, 32, 33, 0.74);
+    --select-wash: rgba(250, 189, 47, 0.07);
+    color-scheme: dark;
+}
+
+[data-theme="light"] {
+    --bg-page: #f9f5d7;
+    --bg-surface: #fbf1c7;
+    --bg-raised: #f2e5bc;
+    --bg-inset: #ebdbb2;
+    --border: #e0d3ac;
+    --border-soft: #ebdbb2;
+    --fg: #3c3836;
+    --fg-muted: #665c54;
+    --fg-subtle: #7c6f64;
+    --accent: #b57614;
+    --accent-text: #8a5a0e;
+    --accent-alt: #79740e;
+    --accent-cool: #076678;
+    --accent-warm: #af3a03;
+    --accent-rose: #8f3f71;
+    --accent-aqua: #427b58;
+    --accent-aqua-text: #376b4b;
+    --btn-bg: #79740e;
+    --btn-fg: #fbf1c7;
+    --shadow: 0 1px 2px rgba(60, 56, 54, 0.10), 0 8px 24px rgba(60, 56, 54, 0.07);
+    --shadow-card: 0 1px 2px rgba(60, 56, 54, 0.07), 0 4px 12px rgba(60, 56, 54, 0.07);
+    --shadow-lift: 0 2px 4px rgba(60, 56, 54, 0.09), 0 12px 26px rgba(60, 56, 54, 0.13);
+    --scrim: rgba(60, 56, 54, 0.40);
+    --select-wash: rgba(181, 118, 20, 0.08);
+    color-scheme: light;
+}
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    padding: var(--shell-gap);
+    background: var(--bg-page);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.cc-input:focus-visible { outline: none; }
+code { font-family: var(--font-mono); }
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- small additions to the cc-* components ---------- */
+.cc-btn--sm { padding: .4em .8em; font-size: 12px; }
+.cc-btn--danger { border-color: var(--accent-warm); color: var(--accent-warm); background: var(--bg-inset); }
+.cc-btn--block { justify-content: center; }
+.icon-btn {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--fg-muted);
+    transition: background 120ms ease, color 120ms ease;
+}
+.icon-btn:hover { background: var(--border); color: var(--fg); }
+.icon-btn:disabled { opacity: .5; cursor: not-allowed; }
+.kbd { font-family: var(--font-mono); font-size: 11px; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--fg-muted); background: var(--bg-surface); }
+
+/* ---------- brand ---------- */
+.brand { display: flex; align-items: center; gap: var(--app-space-3); flex: none; }
+.brand .logo { width: 22px; height: 22px; fill: none; stroke: var(--accent-aqua); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.brand .cc-wordmark { font-size: 18px; }
+
+/* ---------- the app frame ---------- */
+.app { height: 100%; min-height: 480px; flex-direction: column; position: relative; }
+.topbar { display: flex; align-items: center; gap: var(--app-space-4); padding: var(--app-space-4) var(--app-space-5); border-bottom: 1px solid var(--border); }
+.topbar form { display: contents; }
+.grow { flex: 1; }
+
+/* ---------- sign-in ---------- */
+.signin { min-height: 100%; display: grid; place-items: center; }
+.signin .cc-settings-card { width: min(360px, 100%); display: flex; flex-direction: column; gap: var(--app-space-4); }
+.signin .brand .logo { width: 26px; height: 26px; }
+.signin .brand .cc-wordmark { font-size: 22px; }
+.signin p { margin: 0; color: var(--fg-muted); font-size: 13px; }
+.signin .error { color: var(--accent-warm); }
+.field { display: flex; flex-direction: column; gap: var(--app-space-2); }
+.field label { font-size: 13px; color: var(--fg); }
+.check { display: flex; gap: var(--app-space-3); align-items: center; font-size: 13px; }
+input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+}

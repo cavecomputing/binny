@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block head %}<script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>{% endblock %}
+{% block body %}
+<div class="cc-shell app" id="shell">
+    <header class="topbar">
+        <span class="brand"><svg class="logo"><use href="#i-folder"/></svg><span class="cc-wordmark">binny</span></span>
+        <div class="grow"></div>
+        <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+            <button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out"><svg class="i"><use href="#i-logout"/></svg></button>
+        </form>
+    </header>
+</div>
+{% endblock %}

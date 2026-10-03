@@ -84,19 +84,21 @@ buries the real diff under noise.
 ## Run / test
 
 Flask backend, vanilla-JS frontend with no build step, same shape as cozy and imgy: SQLite, `uv`,
-pytest, Docker. _(open: the app and test commands are placeholders until the app exists.)_
+pytest, Docker.
 
 ```bash
-uv sync                               # install the locked dependencies into .venv
-uv run app.py --debug                 # dev server
-BINNY_PASSWORD=changeme uv run app.py       # the password is required
-BINNY_DATA_DIR=/path/to/data uv run app.py   # custom data directory (default: ./data)
+uv sync                                        # install the locked dependencies into .venv
+BINNY_PASSWORD=dev uv run app.py --debug       # dev server on 127.0.0.1:5002 (--host / --port to change)
+BINNY_DATA_DIR=/path/to/data BINNY_PASSWORD=dev uv run app.py   # data directory (default: ./data)
 
-uv run pytest                         # full suite (use `uv run`, not bare pytest)
-uv run pytest tests/test_x.py::test_name -x
+uv run pytest                                  # full suite (use `uv run`, not bare pytest)
+uv run pytest tests/test_auth.py::test_sign_out -x
+node --check binny/static/js/<file>.js         # frontend syntax check; there is no JS test suite
 
 docker compose -f docker/compose.yml up --build
 ```
+
+The app refuses to start without `BINNY_PASSWORD`, including `uv run app.py --help`.
 
 Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; Python is pinned in
 `.python-version`. Change them with `uv add` / `uv remove` (or edit `pyproject.toml` and run
@@ -124,14 +126,16 @@ neighbour.
 |---|---|
 | `app.py` | Entry point, and the **only** Python file at the repo root: `app = create_app()`, which `uv run app.py` and `gunicorn app:app` both name. No logic lives here. |
 | `binny/` | The application package. Everything else in Python goes in here. |
-| `binny/__init__.py` | `create_app()`: config, the login guard, `init_db()`, blueprint registration. |
-| `binny/config.py` | Paths and limits, read once from the environment (`BINNY_DATA_DIR`, `BINNY_PASSWORD`). |
-| `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`. |
+| `binny/__init__.py` | `create_app()`: cookie settings, `init_db()`, the cross-site write guard, the login guard, blueprints. |
+| `binny/config.py` | Paths, read once from the environment (`BINNY_DATA_DIR`, `BINNY_PASSWORD`). |
+| `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`, a short-lived connection per use. |
+| `binny/auth.py` | The login: sign-in and sign-out routes, `require_login()` in front of everything else, and the cookie signing key. |
+| `binny/views.py` | The page itself. |
 | `binny/storage.py` | The one place that turns a user-supplied path into a real one (`safe_path()`), plus file walking. |
 | `binny/api/` | One Flask blueprint per resource — `files`, `folders`, `tags`, `trash`, `downloads`, `auth` — all under `/api`. |
-| `binny/templates/index.html` | The page shell. |
+| `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
 | `binny/static/js/` | ES modules, one per concern (`api.js`, `state.js`, `explorer.js`, `tags.js`, `trash.js`, `downloads.js`, …), entry `main.js` loaded with `<script type="module">`. |
-| `binny/static/css/` | `cavecomputing.css` (the vendored design system, copied unchanged from imgy) and `style.css` (Binny's layout and Gruvbox tokens). |
+| `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | Dockerfile and `compose.yml`, as in imgy. |
 
@@ -236,7 +240,22 @@ it still has a login because anything on the tailnet can reach it.
   `compose.yml` or an `.env` file. Never store it in the repo, the database or the data directory.
   Refuse to start when it is unset or empty rather than running without a login. Compare it in
   constant time.
-- The cookie is `HttpOnly`, `SameSite=Lax`, and long-lived (months), so a device stays logged in.
-  _(open: how to log every device out — rotating the secret key is the simplest answer.)_
-- Behind Caddy, honour `X-Forwarded-Proto` only from the proxy so `Secure` cookies and redirects
-  are right; Caddy passes the Host header through unchanged by default.
+- The cookie (`binny_session`; cookies ignore the port, so the name must not collide with sibling
+  apps) is `HttpOnly`, `SameSite=Lax`, and lasts 400 days when "Keep this device signed in" is
+  ticked. It is signed with a key derived from a random `secret_key` row in `settings` *and* the
+  password, so **changing `BINNY_PASSWORD` signs every device out**; so does deleting that row and
+  restarting.
+- A wrong password waits a second before answering, which makes guessing slow.
+- Behind Caddy, `X-Forwarded-Proto` (via `ProxyFix`) decides whether the cookie is `Secure`: over
+  HTTPS it is, over plain HTTP on the LAN it can't be or it would never come back. Caddy passes the
+  Host header through unchanged by default.
+- Writes from another site's page are refused (`reject_cross_site_writes()`, the same check as
+  imgy and cozy), so keep state-changing routes on POST/PUT/DELETE.
+
+## Testing gotchas
+
+[tests/conftest.py](tests/conftest.py)'s `data_dir` fixture points `binny.config`'s paths and
+password at a temporary directory with `monkeypatch`. That only works because every module reads
+them as `config.FILES_DIR` at call time; a `from .config import FILES_DIR` binds the value at
+import, the patch never reaches it, and the tests quietly start writing into the real `data/`.
+Use the `client` fixture for a signed-in test client and `anon` for one that isn't.

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Sign in · binny{% endblock %}
+{% block body %}
+<main class="signin">
+    <form class="cc-settings-card" method="post">
+        <span class="brand"><svg class="logo"><use href="#i-folder"/></svg><span class="cc-wordmark">binny</span></span>
+        <p>Enter the password to open your files.</p>
+        {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+        <div class="field">
+            <label for="password">Password</label>
+            <input class="cc-input" id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+        </div>
+        <label class="check"><input type="checkbox" name="remember" checked> Keep this device signed in</label>
+        <button class="cc-btn cc-btn--primary cc-btn--block" type="submit"><span>Sign in</span></button>
+    </form>
+</main>
+{% endblock %}
