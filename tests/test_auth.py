@@ -76,6 +76,9 @@ def test_unremembered_device_gets_a_browser_session_cookie(anon):
     ('//evil.example/', '/'),
     ('https://evil.example/', '/'),
     ('/\\evil.example', '/'),
+    ('/\t/evil.example', '/'),
+    ('/\n/evil.example', '/'),
+    ('/\r\nSet-Cookie: x=1', '/'),
 ])
 def test_sign_in_returns_only_to_this_site(anon, target, expected):
     response = anon.post('/login', query_string={'next': target}, data={'password': PASSWORD})

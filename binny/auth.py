@@ -62,8 +62,13 @@ def require_login():
 
 
 def local_target(target):
-    """target if it is a path on this site, else '/', so ?next= can't send the browser elsewhere."""
-    if target and target.startswith('/') and not target.startswith('//') and '\\' not in target:
+    """target if it is a path on this site, else '/', so ?next= can't send the browser elsewhere.
+
+    Browsers drop tabs and newlines from a URL and read a backslash as a slash, so any of them
+    could turn it into "//elsewhere", another site.
+    """
+    if target and target.startswith('/') and not target.startswith('//') \
+            and not any(c == '\\' or c <= ' ' for c in target):
         return target
     return '/'
 
