@@ -1,6 +1,8 @@
 """The one place a client-supplied path becomes a real one, plus the rules for naming new files."""
 import os
+import re
 import threading
+import uuid
 from pathlib import Path, PurePosixPath
 
 from . import config
@@ -21,6 +23,9 @@ KIND_BY_EXTENSION = {ext: kind for kind, extensions in KINDS.items() for ext in 
 
 # Kept whole when 'name (1)' is slotted in front of an extension.
 DOUBLE_EXTENSIONS = ('.tar.gz', '.tar.bz2', '.tar.xz', '.tar.zst')
+
+# A file being uploaded or downloaded, hidden until it's complete (see partial_in()).
+PARTIAL = re.compile(r'\.binny-[0-9a-f]{32}\.part')
 
 
 class InvalidPath(ValueError):
@@ -81,6 +86,13 @@ def numbered(name, is_dir=False):
 def free_name(folder: Path, name, is_dir=False):
     """The first of numbered(name) not taken in folder. Hold NAME_LOCK."""
     return next(candidate for candidate in numbered(name, is_dir) if not os.path.lexists(folder / candidate))
+
+
+def partial_in(folder: Path):
+    """A new hidden file in folder to write into, then rename into place once it's complete, so a
+    half-written file never shows under its real name. Being in the same folder keeps the rename on
+    one filesystem. index.py deletes one that is left behind."""
+    return folder / f'.binny-{uuid.uuid4().hex}.part'
 
 
 def make_folders(path):

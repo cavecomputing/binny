@@ -1,7 +1,6 @@
 """Listing a folder, and uploading, renaming and moving files and folders."""
 import os
 import shutil
-import uuid
 
 from flask import Blueprint, abort, request
 
@@ -46,7 +45,7 @@ def upload():
                 tags.drop(conn, added)
             conn.commit()
 
-    partial = target_dir / f'.binny-{uuid.uuid4().hex}.part'
+    partial = storage.partial_in(target_dir)
     try:
         with open(partial, 'wb') as out:
             shutil.copyfileobj(request.stream, out, 1 << 20)

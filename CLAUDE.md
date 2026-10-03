@@ -142,8 +142,8 @@ neighbour.
 | `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`, a short-lived connection per use. |
 | `binny/auth.py` | The login: sign-in and sign-out routes, `require_login()` in front of everything else, and the cookie signing key. |
 | `binny/views.py` | The page, the stored files (`/files/<path>`: shown or downloaded, a folder as a zip) and `POST /zip` for a multi-selection. |
-| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), and `free_name()` for "name (1).ext". |
-| `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. |
+| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), `free_name()` for "name (1).ext", and `partial_in()` for the hidden file a new file is written to. |
+| `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. Its scans delete partial files left behind. |
 | `binny/tags.py` | The `tags` table: `clean()` for a tag from the client, `of()` and `attach()` to read them, and `move()` and `drop()`, which keep tags with an item through renames, moves and the trash. |
 | `binny/archive.py` | Zips streamed to the browser while they're written. |
 | `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), then `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
@@ -204,7 +204,9 @@ held to a higher bar than the rest of the code:
 - **Never trust a client-supplied filename or path.** Resolve every path under the data directory
   and refuse anything that escapes it (`..`, absolute paths, symlinks out). This needs a test.
 - Write uploads to a temp file in the same filesystem and rename into place, so a dropped
-  connection never leaves a half-written file under the real name.
+  connection never leaves a half-written file under the real name (`storage.partial_in()`). A
+  partial file nothing has written to for a day was cut short by a restart, and scanning its folder
+  deletes it.
 - Stream uploads and downloads; never read a whole file into memory. Downloads should support
   range requests so large files and media resume and seek.
 - A taken name gets " (1)", " (2)" … (`free_name()`); an upload or a move never overwrites. Only a

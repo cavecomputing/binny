@@ -7,10 +7,14 @@ moved, so files added or removed from outside the app show up as far down as the
 file edited in place doesn't move its folder's time, so index_tree() syncs everything on start.
 Changes made through the app update their rows in the same request; moves and renames re-key them
 with move_rows() instead of rescanning.
+
+Scanning a folder also deletes partial files (storage.PARTIAL) nothing has written to for a day:
+uploads and downloads that a restart cut short, or whose folder moved while they were written.
 """
 import logging
 import os
 import stat
+import time
 
 from . import storage
 from .db import get_db
@@ -20,6 +24,8 @@ logger = logging.getLogger(__name__)
 # Matches a path and everything below it. Bind subtree_args(path). '0' sorts right after '/', so
 # the range is exactly the rows under 'path/', and the primary key index serves it.
 SUBTREE = '(path = ? OR (path > ? AND path < ?))'
+
+STALE_PARTIAL = 24 * 60 * 60  # seconds; a live upload or download writes far more often
 
 
 def subtree_args(path):
@@ -38,7 +44,7 @@ def entry_row(st):
 def scan(folder):
     """{path: (is_dir, size, mtime)} for the visible entries directly inside folder, or None if it is gone.
 
-    Hidden entries (.trash, partial uploads) and symlinks are left out, and so are names that aren't
+    Hidden entries (.trash, partial files) and symlinks are left out, and so are names that aren't
     valid UTF-8, which neither SQLite nor JSON can carry.
     """
     found = {}
@@ -46,6 +52,7 @@ def scan(folder):
         with os.scandir(storage.resolve(folder)) as entries:
             for entry in entries:
                 if entry.name.startswith('.'):
+                    drop_if_stale(entry)
                     continue
                 try:
                     entry.name.encode()
@@ -57,6 +64,18 @@ def scan(folder):
     except (FileNotFoundError, NotADirectoryError):
         return None
     return found
+
+
+def drop_if_stale(entry):
+    """Delete entry if it's a partial file left behind."""
+    if not storage.PARTIAL.fullmatch(entry.name):
+        return
+    try:
+        if time.time() - entry.stat(follow_symlinks=False).st_mtime > STALE_PARTIAL:
+            os.unlink(entry.path)
+            logger.info('Deleted %s, a partial file left behind', entry.path)
+    except OSError:
+        pass
 
 
 def sync_folder(conn, folder):

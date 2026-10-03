@@ -1,7 +1,9 @@
 import os
+import time
 
 import pytest
 
+from binny import index
 from binny.db import get_db
 
 from .conftest import listing, upload
@@ -55,6 +57,19 @@ def test_an_upload_cut_short_leaves_nothing_behind(client, files):
                           environ_overrides={'CONTENT_LENGTH': '10'})
     assert response.status_code == 400
     assert list(files.iterdir()) == []
+
+
+def test_listing_deletes_partial_files_left_behind(client, files):
+    (files / 'docs').mkdir()
+    stale, fresh, other = files / 'docs' / f'.binny-{"a" * 32}.part', files / f'.binny-{"b" * 32}.part', files / '.notes.part'
+    for path in (stale, fresh, other):
+        path.write_bytes(b'half')
+    long_ago = time.time() - index.STALE_PARTIAL - 60
+    for path in (stale, other):
+        os.utime(path, (long_ago, long_ago))
+    listing(client)
+    listing(client, 'docs')
+    assert (stale.exists(), fresh.exists(), other.exists()) == (False, True, True)
 
 
 def test_listing_picks_up_changes_made_outside_the_app(client, files):
