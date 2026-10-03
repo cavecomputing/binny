@@ -15,14 +15,18 @@ const encode = (path) => path.split('/').map(encodeURIComponent).join('/');
 /** The app's address for a folder, e.g. "#/photos/2026". */
 export const folderHash = (path) => `#/${encode(path)}`;
 
-/** The folder the address bar names. */
+/** The folder the address bar names; the top folder for any other address. */
 export function currentFolder() {
+    if (!location.hash.startsWith('#/')) return '';
     try {
-        return location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent).join('/');
+        return location.hash.slice(2).split('/').filter(Boolean).map(decodeURIComponent).join('/');
     } catch {
         return ''; // a malformed %-escape
     }
 }
+
+/** Whether the address bar shows the trash (#trash) rather than a folder. */
+export const isTrash = () => location.hash === '#trash';
 
 /** Where the server sends a stored file, or a folder as a zip. */
 export const fileUrl = (path, download = false) => `/files/${encode(path)}${download ? '?download' : ''}`;

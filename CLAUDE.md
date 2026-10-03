@@ -134,9 +134,9 @@ neighbour.
 | `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), and `free_name()` for "name (1).ext". |
 | `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. |
 | `binny/archive.py` | Zips streamed to the browser while they're written. |
-| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (tree, new folder), then `tags`, `trash`, `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
+| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, new folder), `trash` (trash, restore, delete forever, empty), then `tags` and `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `explorer.js` (breadcrumb and file table), `sidebar.js` (folder tree), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
+| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | Dockerfile and `compose.yml`, as in imgy. |
@@ -157,8 +157,8 @@ you on its own under it:
 - Modules that bind listeners export an `initX()`; `main.js` calls them in order.
 - A module that changes files calls `filesChanged()` (`state.js`); the explorer and the sidebar
   reload on that event. Don't reach into another module to redraw it.
-- Folders are addressed by the hash (`#/photos/2026`), so back, forward and reload work and a
-  folder can be bookmarked.
+- Folders are addressed by the hash (`#/photos/2026`, the trash is `#trash`), so back, forward and
+  reload work and a folder can be bookmarked.
 - The look is the **cavecomputing design system**
   ([reference](https://claude.ai/artifact/TAYcpHgxU55sLKKU2sYeRv): read its `project/README.md`,
   `project/tokens.json` and `project/components/bundle.css`). Copy its tokens and its `bundle.css`
@@ -235,8 +235,11 @@ data/                 # BINNY_DATA_DIR, default ./data
   gone is stale, not an error.
 - **Trash is `data/files/.trash/`.** The app hides it (and every dot-folder) from listings, tag
   search and folder totals, and never lets an upload, move, rename or download target it except
-  through the trash routes. Trashed items keep their tags and remember their original path so
-  restore can put them back.
+  through the trash routes. A trashed item keeps its name behind the time it was trashed
+  (`<time_ns>_<name>`), and a `trash` row remembers where it came from and its size, so restore
+  can put it back (making its folder again if that's gone; a taken name gets " (1)") and the trash
+  never walks a folder to size it. Trashed items keep their tags. Anything in `.trash/` is trash,
+  rows or not: something put there by hand shows in the trash and restores to the top folder.
 
 ### The downloader fetches URLs on the server's behalf
 

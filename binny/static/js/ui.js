@@ -28,15 +28,26 @@ export function formatDate(seconds) {
 
 let toastTimer;
 
-/** A short message at the bottom. It is a popover, so it shows above an open dialog too. */
-export function toast(html, { error = false } = {}) {
+/**
+ * A short message at the bottom, with an optional { label, run } button such as Undo. It is a
+ * popover, so it shows above an open dialog too.
+ */
+export function toast(html, { error = false, action = null } = {}) {
     const box = $('toast');
     box.innerHTML = html;
+    if (action) {
+        const button = Object.assign(document.createElement('button'), { type: 'button', className: 'toast__action', textContent: action.label });
+        button.addEventListener('click', () => {
+            box.hidePopover();
+            action.run();
+        });
+        box.append(button);
+    }
     box.classList.toggle('toast--error', error);
     box.hidePopover();
     box.showPopover();
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => box.hidePopover(), error ? 6000 : 3000);
+    toastTimer = setTimeout(() => box.hidePopover(), error || action ? 6000 : 3000);
 }
 
 export const showError = (message) => toast(esc(message), { error: true });

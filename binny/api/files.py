@@ -31,17 +31,14 @@ def upload():
     beside the target and are renamed into place once complete, so a dropped connection never
     leaves a half-written file under the real name. A taken name gets " (1)", never an overwrite.
     """
-    folder, target_dir = folder_arg(request.args.get('folder', ''))
+    folder, _ = folder_arg(request.args.get('folder', ''))
     *subfolders, name = [name_arg(part) for part in request.args.get('path', '').split('/')]
-    created = []
-    for part in subfolders:
-        folder, target_dir = storage.child(folder, part), target_dir / part
-        try:
-            target_dir.mkdir()
-            created.append(folder)
-        except FileExistsError:
-            if target_dir.is_symlink() or not target_dir.is_dir():
-                abort(409, f'"{part}" is a file, not a folder')
+    folder = '/'.join([folder, *subfolders]).strip('/')
+    try:
+        created = storage.make_folders(folder)
+        target_dir = storage.resolve(folder)
+    except storage.InvalidPath as e:
+        abort(409, str(e))
 
     partial = target_dir / f'.binny-{uuid.uuid4().hex}.part'
     try:

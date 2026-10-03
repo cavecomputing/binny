@@ -3,7 +3,7 @@
  * and the disk usage. It hides with its button or [, remembered per device; on phones it is a drawer.
  */
 import * as api from './api.js';
-import { ancestors, byName, currentFolder, folderHash } from './paths.js';
+import { ancestors, byName, currentFolder, folderHash, isTrash } from './paths.js';
 import { $, esc, formatSize, icon } from './ui.js';
 
 const expanded = new Set(); // branches opened by their arrow
@@ -37,6 +37,9 @@ export async function loadTree() {
     };
     walk('', 1);
     $('tree').innerHTML = rows.join('');
+    $('trashCount').textContent = data.trash_items || '';
+    if (isTrash()) $('trashNav').setAttribute('aria-current', 'page');
+    else $('trashNav').removeAttribute('aria-current');
 
     const { used, total } = data.disk;
     const percent = total ? Math.round((used / total) * 100) : 0;
@@ -51,7 +54,7 @@ function treeRow(sub, depth, folder, open) {
     const twisty = sub.has_children
         ? `<button class="twisty" type="button" data-toggle="${esc(sub.path)}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${esc(sub.name)}">${icon('chevron-right')}</button>`
         : '<span class="twisty"></span>';
-    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="cc-shell__row" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${sub.path === folder ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
+    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="cc-shell__row" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${sub.path === folder && !isTrash() ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
 }
 
 function toggleBranch(path, wasOpen) {

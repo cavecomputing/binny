@@ -16,6 +16,14 @@ SCHEMA = '''
         mtime REAL NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_entries_parent ON entries(parent);
+    -- What was trashed through the app. name is its name in data/files/.trash/,
+    -- "<time_ns>_<original name>"; original is where it came from, so restore can put it back;
+    -- size counts everything inside a folder, so the trash never has to walk one.
+    CREATE TABLE IF NOT EXISTS trash (
+        name TEXT PRIMARY KEY,
+        original TEXT NOT NULL,
+        size INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL

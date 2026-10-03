@@ -23,26 +23,49 @@
                 <div class="cc-eyebrow">Folders</div>
                 <nav class="nav" id="tree" aria-label="Folders"></nav>
             </section>
+            <nav class="nav" aria-label="Trash">
+                <a class="cc-shell__row" id="trashNav" href="#trash" data-trash><svg class="i"><use href="#i-trash"/></svg><span>Trash</span><span class="count" id="trashCount"></span></a>
+            </nav>
             <div class="grow"></div>
             <div class="storage" id="storage"></div>
         </aside>
 
         <main class="cc-shell__main" id="main">
-            <div class="subbar">
-                <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
-                <div class="summary" id="summary"></div>
-                <div class="grow"></div>
-                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="newFolderBtn" type="button" title="New folder (N)"><svg class="i"><use href="#i-folder-plus"/></svg><span>New folder</span></button>
-            </div>
-            <div class="selbar" id="selbar" hidden>
-                <b id="selCount"></b>
-                <div class="grow"></div>
-                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selRename" type="button"><svg class="i"><use href="#i-rename"/></svg><span>Rename</span></button>
-                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selMove" type="button"><svg class="i"><use href="#i-move"/></svg><span>Move to…</span></button>
-                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selDownload" type="button"><svg class="i"><use href="#i-download"/></svg><span id="selDownloadLabel">Download</span></button>
-                <button class="cc-btn cc-btn--sm" id="selClear" type="button"><span>Clear</span></button>
-            </div>
-            <div class="list" id="list"></div>
+            <section class="view" id="filesView">
+                <div class="subbar">
+                    <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
+                    <div class="summary" id="summary"></div>
+                    <div class="grow"></div>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="newFolderBtn" type="button" title="New folder (N)"><svg class="i"><use href="#i-folder-plus"/></svg><span>New folder</span></button>
+                </div>
+                <div class="selbar" id="selbar" hidden>
+                    <b id="selCount"></b>
+                    <div class="grow"></div>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selRename" type="button"><svg class="i"><use href="#i-rename"/></svg><span>Rename</span></button>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selMove" type="button"><svg class="i"><use href="#i-move"/></svg><span>Move to…</span></button>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selDownload" type="button"><svg class="i"><use href="#i-download"/></svg><span id="selDownloadLabel">Download</span></button>
+                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="selTrash" type="button" title="Move to trash (Del)"><svg class="i"><use href="#i-trash"/></svg><span>Trash</span></button>
+                    <button class="cc-btn cc-btn--sm" id="selClear" type="button"><span>Clear</span></button>
+                </div>
+                <div class="list" id="list"></div>
+            </section>
+
+            <section class="view" id="trashView" hidden>
+                <div class="subbar">
+                    <div class="crumbs"><b>trash</b></div>
+                    <div class="summary" id="trashSummary"></div>
+                    <div class="grow"></div>
+                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="emptyTrashBtn" type="button"><svg class="i"><use href="#i-trash"/></svg><span>Empty trash</span></button>
+                </div>
+                <div class="selbar" id="trashSelbar" hidden>
+                    <b id="trashSelCount"></b>
+                    <div class="grow"></div>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="trashSelRestore" type="button"><svg class="i"><use href="#i-restore"/></svg><span>Restore</span></button>
+                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="trashSelDelete" type="button"><svg class="i"><use href="#i-trash"/></svg><span>Delete forever</span></button>
+                    <button class="cc-btn cc-btn--sm" id="trashSelClear" type="button"><span>Clear</span></button>
+                </div>
+                <div class="list" id="trashList"></div>
+            </section>
         </main>
     </div>
 

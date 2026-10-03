@@ -5,6 +5,7 @@ import { initMove } from './move.js';
 import { initShortcuts } from './shortcuts.js';
 import { initSidebar } from './sidebar.js';
 import { initTheme } from './theme.js';
+import { initTrash } from './trash.js';
 import { initUi } from './ui.js';
 import { initUpload } from './upload.js';
 
@@ -12,6 +13,7 @@ initTheme();
 initUi();
 initSidebar();
 initExplorer();
+initTrash();
 initUpload();
 initMove();
 initDrop();

@@ -78,6 +78,24 @@ def free_name(folder: Path, name, is_dir=False):
     return candidate
 
 
+def make_folders(path):
+    """Create the missing folders of a cleaned path, top first. Returns the ones it created.
+
+    Raises InvalidPath when a file stands where a folder should be.
+    """
+    created, current = [], ''
+    for part in path.split('/') if path else []:
+        current = child(current, part)
+        folder = resolve(current)
+        try:
+            folder.mkdir()
+            created.append(current)
+        except FileExistsError:
+            if folder.is_symlink() or not folder.is_dir():
+                raise InvalidPath(f'"{part}" is a file, not a folder') from None
+    return created
+
+
 def child(folder, name):
     return f'{folder}/{name}' if folder else name
 

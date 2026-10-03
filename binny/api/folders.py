@@ -6,6 +6,7 @@ from flask import Blueprint, abort, request
 from .. import config, index, storage
 from ..db import get_db
 from .common import folder_arg, json_body, name_arg
+from .trash import trash_entries
 
 bp = Blueprint('folders', __name__)
 
@@ -16,7 +17,8 @@ SUBFOLDERS = '''
 
 @bp.get('/folders')
 def folder_tree():
-    """The subfolders of the top folder and of each ?open=<folder>, from the index, plus disk usage."""
+    """The sidebar: the subfolders of the top folder and of each ?open=<folder>, from the index, plus
+    how full the disk is and how much is in the trash."""
     opened = {''}
     for folder in request.args.getlist('open'):
         try:
@@ -31,7 +33,8 @@ def folder_tree():
                             for row in conn.execute(SUBFOLDERS, (folder,))]
         files_size = index.folder_totals(conn, '')[1]
     disk = shutil.disk_usage(config.FILES_DIR)
-    return {'tree': tree, 'files_size': files_size, 'disk': {'total': disk.total, 'used': disk.used}}
+    return {'tree': tree, 'files_size': files_size, 'disk': {'total': disk.total, 'used': disk.used},
+            'trash_items': len(trash_entries())}
 
 
 @bp.post('/folders')

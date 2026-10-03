@@ -1,10 +1,12 @@
 /**
- * Drag and drop. Files from the computer upload; rows dragged within Binny move. A folder row, a
- * sidebar folder or a breadcrumb takes the drop into that folder; files dropped anywhere else go into
- * the folder on screen.
+ * Drag and drop. Files from the computer upload; rows dragged within Binny move, or go to the trash
+ * when dropped on it. A folder row, a sidebar folder or a breadcrumb takes the drop into that
+ * folder; files dropped anywhere else go into the folder on screen.
  */
 import { moveItems } from './move.js';
+import { isTrash } from './paths.js';
 import { state } from './state.js';
+import { trashItems } from './trash.js';
 import { $ } from './ui.js';
 import { uploadDropped } from './upload.js';
 
@@ -35,9 +37,10 @@ export function initDrop() {
     document.addEventListener('dragover', (event) => {
         const rows = event.dataTransfer.types.includes(ROWS);
         if (!rows && !event.dataTransfer.types.includes('Files')) return;
+        setTarget(event.target.closest?.(rows ? '[data-drop], [data-trash]' : '[data-drop]') ?? null);
+        if (!target && (rows || isTrash())) return; // nowhere to drop: the browser shows "not allowed"
         event.preventDefault();
-        setTarget(event.target.closest?.('[data-drop]') ?? null);
-        event.dataTransfer.dropEffect = rows ? (target ? 'move' : 'none') : 'copy';
+        event.dataTransfer.dropEffect = rows ? 'move' : 'copy';
         if (!rows) {
             $('dropHintText').textContent = `Drop to upload into /${target ? target.dataset.drop : state.folder}`;
             $('dropHint').hidden = false;
@@ -48,13 +51,14 @@ export function initDrop() {
     });
 
     document.addEventListener('drop', (event) => {
-        const to = target ? target.dataset.drop : state.folder;
-        const onFolder = target !== null;
+        const dropped = target;
+        const to = dropped ? dropped.dataset.drop : state.folder;
         end();
         if (event.dataTransfer.types.includes(ROWS)) {
             event.preventDefault();
             const paths = JSON.parse(event.dataTransfer.getData(ROWS));
-            if (onFolder && !paths.includes(to)) moveItems(paths, to);
+            if (dropped?.dataset.trash !== undefined) trashItems(paths);
+            else if (dropped && !paths.includes(to)) moveItems(paths, to);
         } else if (event.dataTransfer.types.includes('Files')) {
             event.preventDefault();
             uploadDropped(event.dataTransfer, to);

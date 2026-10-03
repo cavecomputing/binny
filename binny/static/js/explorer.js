@@ -1,8 +1,10 @@
 /** The main pane: breadcrumb, summary, selection bar and the table of the folder on screen. */
 import * as api from './api.js';
 import { openMove } from './move.js';
-import { ancestors, byName, currentFolder, fileUrl, folderHash, nameOf, parentOf } from './paths.js';
+import { ancestors, byName, currentFolder, fileUrl, folderHash, isTrash, nameOf, parentOf } from './paths.js';
+import { clickSelect, markRows } from './selection.js';
 import { filesChanged, state } from './state.js';
+import { trashItems } from './trash.js';
 import { $, ask, esc, formatDate, formatSize, icon, plural } from './ui.js';
 
 const SORTS = { name: 'Name', size: 'Size', mtime: 'Modified' };
@@ -18,8 +20,10 @@ function savedSort() {
     return { key: 'name', desc: false };
 }
 
-/** Load the folder the address bar names, and draw it. */
+/** Load the folder the address bar names, and draw it. The trash has a view of its own. */
 export async function load() {
+    $('filesView').hidden = isTrash();
+    if (isTrash()) return;
     const folder = currentFolder();
     const request = ++latest;
     let listing;
@@ -77,6 +81,7 @@ function row(item) {
             <button class="icon-btn opt" type="button" data-act="rename" title="Rename (F2)" aria-label="Rename">${icon('rename')}</button>
             <button class="icon-btn opt" type="button" data-act="move" title="Move (M)" aria-label="Move">${icon('move')}</button>
             <a class="icon-btn" href="${esc(fileUrl(item.path, true))}" download title="Download${item.is_dir ? ' as zip' : ''}" aria-label="Download">${icon('download')}</a>
+            <button class="icon-btn del" type="button" data-act="trash" title="Move to trash (Del)" aria-label="Move to trash">${icon('trash')}</button>
         </div></td>
     </tr>`;
 }
@@ -96,7 +101,7 @@ function render() {
     $('list').innerHTML = items.length
         ? `<table class="files">
             <thead><tr>
-                <th class="chk"><input type="checkbox" id="selAll" aria-label="Select all"></th>
+                <th class="chk"><input type="checkbox" aria-label="Select all"></th>
                 ${heading('name')}${heading('size', 'r col-size')}${heading('mtime', 'col-mod')}<th></th>
             </tr></thead>
             <tbody>${items.map(row).join('')}</tbody>
@@ -108,39 +113,12 @@ function render() {
 /** Mark the selected rows and fit the selection bar to them, without redrawing the table. */
 function renderSelection() {
     const count = state.selected.size;
-    for (const tr of $('list').querySelectorAll('tr.row')) {
-        const selected = state.selected.has(tr.dataset.path);
-        tr.classList.toggle('sel', selected);
-        tr.querySelector('input').checked = selected;
-    }
-    const all = $('selAll');
-    if (all) {
-        all.checked = count > 0 && count === state.items.length;
-        all.indeterminate = count > 0 && count < state.items.length;
-    }
+    markRows($('list'), state.selected, (row) => row.dataset.path);
     $('selbar').hidden = !count;
     $('selCount').textContent = `${count.toLocaleString()} selected`;
     $('selRename').hidden = count !== 1;
     const single = count === 1 && itemAt([...state.selected][0]);
     $('selDownloadLabel').textContent = single && !single.is_dir ? 'Download' : 'Download zip';
-}
-
-/** A click selects just that row; Ctrl/Cmd-click or its checkbox toggles it; Shift-click adds a range. */
-function clickRow(path, event) {
-    const paths = sorted(state.items).map((item) => item.path);
-    if (event.shiftKey && paths.includes(anchor)) {
-        const [from, to] = [paths.indexOf(anchor), paths.indexOf(path)].sort((a, b) => a - b);
-        for (const each of paths.slice(from, to + 1)) state.selected.add(each);
-    } else if (event.ctrlKey || event.metaKey || event.target.type === 'checkbox') {
-        if (!state.selected.delete(path)) state.selected.add(path);
-        anchor = path;
-    } else {
-        const onlyThis = state.selected.size === 1 && state.selected.has(path);
-        state.selected.clear();
-        if (!onlyThis) state.selected.add(path);
-        anchor = path;
-    }
-    renderSelection();
 }
 
 function setSort(key) {
@@ -197,6 +175,8 @@ export function renameSelected() {
 
 export const moveSelected = () => openMove([...state.selected]);
 
+export const trashSelected = () => trashItems([...state.selected]);
+
 export function selectAll() {
     for (const item of state.items) state.selected.add(item.path);
     renderSelection();
@@ -226,7 +206,10 @@ export function initExplorer() {
         const action = event.target.closest('[data-act]')?.dataset.act;
         if (action === 'rename') return rename(itemAt(tr.dataset.path));
         if (action === 'move') return openMove([tr.dataset.path]);
-        if (!event.target.closest('a')) clickRow(tr.dataset.path, event); // links open or download by themselves
+        if (action === 'trash') return trashItems([tr.dataset.path]);
+        if (event.target.closest('a')) return; // links open or download by themselves
+        anchor = clickSelect(state.selected, sorted(state.items).map((item) => item.path), tr.dataset.path, event, anchor);
+        renderSelection();
     });
     list.addEventListener('dblclick', (event) => {
         const item = itemAt(event.target.closest('tr.row')?.dataset.path);
@@ -235,13 +218,14 @@ export function initExplorer() {
         else window.open(fileUrl(item.path), '_blank', 'noopener');
     });
     list.addEventListener('change', (event) => {
-        if (event.target.id === 'selAll') event.target.checked ? selectAll() : clearSelection();
+        if (event.target.closest('thead')) event.target.checked ? selectAll() : clearSelection();
     });
 
     $('newFolderBtn').addEventListener('click', newFolder);
     $('selRename').addEventListener('click', renameSelected);
     $('selMove').addEventListener('click', moveSelected);
     $('selDownload').addEventListener('click', () => download([...state.selected]));
+    $('selTrash').addEventListener('click', trashSelected);
     $('selClear').addEventListener('click', clearSelection);
     load();
 }
