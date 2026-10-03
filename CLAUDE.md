@@ -139,9 +139,16 @@ you on its own under it.
   globals except what `main.js` deliberately wires up.
 - Call the server through `api.js`, which throws on errors and shows them to the user.
 - Modules that bind listeners export an `initX()`; `main.js` calls them in order.
-- Colors come from CSS custom properties; don't hardcode them. Follow imgy's accent meanings:
-  yellow for focus and selection, green for the brand and done states, blue for links and paths,
-  orange for anything destructive. Reuse the `cc-*` components before adding new ones.
+- The look is the **cavecomputing design system**
+  ([reference](https://claude.ai/artifact/TAYcpHgxU55sLKKU2sYeRv): read its `project/README.md`,
+  `project/tokens.json` and `project/components/bundle.css`). Copy its tokens and its `bundle.css`
+  unchanged into `binny/static/css/` and build on the `cc-*` components (`cc-shell`, `cc-btn`,
+  `cc-tag`, `cc-badge`, `cc-callout`, `cc-card-header`, `cc-input`, …) before writing new ones.
+  Change the design system, not the copy.
+- Colors come from its tokens; never hardcode them. Accents keep one meaning: yellow
+  (`accent-text`) for focus, selection and active rows; green (`accent-alt`) for the brand and
+  section icons; aqua for done; blue (`accent-cool`) for paths and links; orange (`accent-warm`) for
+  anything destructive. There is no red. No web fonts: system mono and sans only.
 - The [interface mockup](https://claude.ai/artifact/7KsCx3jSnVbB6tydGm55db) is the reference for layout: the "+" split button (click uploads files;
   the arrow opens "Upload from link"), folder and tag sidebar, file table with tag chips, trash
   view, downloads panel, sign-in card.
