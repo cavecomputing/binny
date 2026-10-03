@@ -15,7 +15,7 @@ const encode = (path) => path.split('/').map(encodeURIComponent).join('/');
 /** The app's address for a folder, e.g. "#/photos/2026". */
 export const folderHash = (path) => `#/${encode(path)}`;
 
-/** The folder the address bar names; the top folder for any other address. */
+/** The folder the address bar names; the top folder for any other address (see isTrash, currentSearch). */
 export function currentFolder() {
     if (!location.hash.startsWith('#/')) return '';
     try {
@@ -27,6 +27,19 @@ export function currentFolder() {
 
 /** Whether the address bar shows the trash (#trash) rather than a folder. */
 export const isTrash = () => location.hash === '#trash';
+
+/** The app's address for a search, e.g. "#search/family%20-work". */
+export const searchHash = (query) => `#search/${encodeURIComponent(query)}`;
+
+/** The search the address bar names, or null when it names a folder or the trash. */
+export function currentSearch() {
+    if (!location.hash.startsWith('#search/')) return null;
+    try {
+        return decodeURIComponent(location.hash.slice(8));
+    } catch {
+        return null;
+    }
+}
 
 /** Where the server sends a stored file, or a folder as a zip. */
 export const fileUrl = (path, download = false) => `/files/${encode(path)}${download ? '?download' : ''}`;

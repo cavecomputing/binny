@@ -1,9 +1,14 @@
-/** The main pane: breadcrumb, summary, selection bar and the table of the folder on screen. */
+/**
+ * The main pane: breadcrumb, summary, selection bar and the table of the folder on screen, or of a
+ * search's results from anywhere.
+ */
 import * as api from './api.js';
 import { openMove } from './move.js';
-import { ancestors, byName, currentFolder, fileUrl, folderHash, isTrash, nameOf, parentOf } from './paths.js';
+import { ancestors, byName, currentFolder, currentSearch, fileUrl, folderHash, isTrash, nameOf, parentOf, searchHash } from './paths.js';
 import { clickSelect, markRows } from './selection.js';
 import { filesChanged, state } from './state.js';
+import { openTagger } from './tagger.js';
+import { formatQuery, parseQuery } from './tags.js';
 import { trashItems } from './trash.js';
 import { $, ask, esc, formatDate, formatSize, icon, plural } from './ui.js';
 
@@ -20,26 +25,38 @@ function savedSort() {
     return { key: 'name', desc: false };
 }
 
-/** Load the folder the address bar names, and draw it. The trash has a view of its own. */
+/** The /api/search parameters for a search. */
+function searchParams(query) {
+    const { tags, not, name } = parseQuery(query);
+    return [...tags.map((tag) => ['tag', tag]), ...not.map((tag) => ['not', tag]), ...(name ? [['name', name]] : [])];
+}
+
+/**
+ * Load what the address bar names, a folder or a search, and draw it. A search keeps state.folder,
+ * so uploads and new folders still go where the search started. The trash has a view of its own.
+ */
 export async function load() {
     $('filesView').hidden = isTrash();
     if (isTrash()) return;
-    const folder = currentFolder();
+    const search = currentSearch();
+    const folder = search === null ? currentFolder() : state.folder;
     const request = ++latest;
     let listing;
     try {
-        listing = await api.get('/api/list', { folder });
+        listing = search === null ? await api.get('/api/list', { folder }) : await api.get('/api/search', searchParams(search));
     } catch (error) {
-        if (request === latest && error.status === 404 && folder) location.hash = folderHash(parentOf(folder));
+        if (request === latest && error.status === 404 && search === null && folder) location.hash = folderHash(parentOf(folder));
         return;
     }
     if (request !== latest) return;
-    if (folder !== state.folder) {
+    if (folder !== state.folder || search !== state.search) {
         state.selected.clear();
         anchor = null;
     }
     state.folder = folder;
+    state.search = search;
     state.items = listing.items;
+    state.truncated = Boolean(listing.truncated);
     const present = new Set(listing.items.map((item) => item.path));
     for (const path of state.selected) if (!present.has(path)) state.selected.delete(path);
     render();
@@ -65,19 +82,27 @@ function sizeLabel(item) {
     return item.items ? `<span class="sub">${plural(item.items, 'item')} · </span>${formatSize(item.size)}` : '<span class="sub">empty</span>';
 }
 
+/** An item's tags as chips, each a search for it. */
+const tagChips = (item, className) => (item.tags.length
+    ? `<div class="tags ${className}">${item.tags.map((tag) => `<a class="cc-tag" href="${esc(searchHash(tag))}">${esc(tag)}</a>`).join('')}</div>`
+    : '');
+
 function row(item) {
     const [stem, ext] = splitName(item);
     const link = item.is_dir ? `href="${esc(folderHash(item.path))}"` : `href="${esc(fileUrl(item.path))}" target="_blank" rel="noopener"`;
     const date = formatDate(item.mtime);
+    const where = state.search === null ? '' : `<a class="path" href="${esc(folderHash(parentOf(item.path)))}" title="Open the folder it's in">/${esc(parentOf(item.path))}</a>`;
     return `<tr class="row${item.is_dir ? ' dir' : ''}" data-path="${esc(item.path)}" draggable="true"${item.is_dir ? ` data-drop="${esc(item.path)}"` : ''}>
         <td class="chk"><input type="checkbox" aria-label="Select ${esc(item.name)}"></td>
         <td><div class="name">
             <span class="ficon ${item.kind}">${icon(item.kind)}</span>
-            <div class="name-text"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a><div class="meta">${sizeLabel(item)} · ${date}</div></div>
+            <div class="name-text"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a>${where}<div class="meta">${sizeLabel(item)} · ${date}</div>${tagChips(item, 'meta-tags')}</div>
         </div></td>
+        <td class="col-tags">${tagChips(item, '')}</td>
         <td class="num r col-size">${sizeLabel(item)}</td>
         <td class="num col-mod" title="${esc(new Date(item.mtime * 1000).toLocaleString())}">${date}</td>
         <td><div class="acts">
+            <button class="icon-btn opt" type="button" data-act="tags" title="Tags (T)" aria-label="Tags">${icon('tag')}</button>
             <button class="icon-btn opt" type="button" data-act="rename" title="Rename (F2)" aria-label="Rename">${icon('rename')}</button>
             <button class="icon-btn opt" type="button" data-act="move" title="Move (M)" aria-label="Move">${icon('move')}</button>
             <a class="icon-btn" href="${esc(fileUrl(item.path, true))}" download title="Download${item.is_dir ? ' as zip' : ''}" aria-label="Download">${icon('download')}</a>
@@ -92,21 +117,52 @@ function heading(key, className = '') {
         <button class="sort" type="button" data-sort="${key}">${SORTS[key]}${current ? icon('chevron-down') : ''}</button></th>`;
 }
 
-function render() {
+/** The breadcrumb of the folder on screen; every crumb takes drops. */
+function folderCrumbs() {
     const crumb = (path) => `<a href="${esc(folderHash(path))}" data-drop="${esc(path)}">${esc(path ? nameOf(path) : 'files')}</a>`;
-    $('crumbs').innerHTML = ['', ...ancestors(state.folder)].map(crumb).join('<span>/</span>');
+    return ['', ...ancestors(state.folder)].map(crumb).join('<span>/</span>');
+}
+
+/** In place of the breadcrumb during a search: its terms, each one a link to the search without it. */
+function searchCrumbs() {
+    const terms = parseQuery(state.search);
+    const without = (change) => {
+        const query = formatQuery(change({ ...terms }));
+        return esc(query ? searchHash(query) : folderHash(state.folder));
+    };
+    const term = (label, text, href) => `<a class="cc-tag" href="${href}" title="Take this out of the search">${label ? `<b>${label}</b> ` : ''}${esc(text)}${icon('x')}</a>`;
+    return [
+        '<b class="crumbs__label">search</b>',
+        ...terms.tags.map((tag) => term('', tag, without((t) => ({ ...t, tags: t.tags.filter((x) => x !== tag) })))),
+        ...terms.not.map((tag) => term('not', tag, without((t) => ({ ...t, not: t.not.filter((x) => x !== tag) })))),
+        ...(terms.name ? [term('name', terms.name, without((t) => ({ ...t, name: '' })))] : []),
+        `<a class="crumbs__clear" href="${esc(folderHash(state.folder))}">clear</a>`,
+    ].join('');
+}
+
+function render() {
+    const searching = state.search !== null;
+    $('crumbs').classList.toggle('crumbs--search', searching);
+    $('crumbs').innerHTML = searching ? searchCrumbs() : folderCrumbs();
+    $('newFolderBtn').hidden = searching;
 
     const items = sorted(state.items);
-    $('summary').innerHTML = `<b>${plural(items.length, 'item')}</b> · ${formatSize(items.reduce((sum, item) => sum + item.size, 0))}`;
+    const size = formatSize(items.reduce((sum, item) => sum + item.size, 0));
+    $('summary').innerHTML = state.truncated
+        ? `<b>the first ${plural(items.length, 'item')}</b> · ${size} · narrow the search to see the rest`
+        : `<b>${plural(items.length, 'item')}</b> · ${size}`;
+    const empty = searching
+        ? `<div class="empty">${icon('search')}<p>Nothing matches.</p></div>`
+        : `<div class="empty">${icon('folder')}<p>This folder is empty.</p><p>Drop files here, or upload them with <b>+</b>.</p></div>`;
     $('list').innerHTML = items.length
-        ? `<table class="files">
+        ? `<table class="files${items.some((item) => item.tags.length) ? '' : ' files--no-tags'}">
             <thead><tr>
                 <th class="chk"><input type="checkbox" aria-label="Select all"></th>
-                ${heading('name')}${heading('size', 'r col-size')}${heading('mtime', 'col-mod')}<th></th>
+                ${heading('name')}<th class="col-tags">Tags</th>${heading('size', 'r col-size')}${heading('mtime', 'col-mod')}<th></th>
             </tr></thead>
             <tbody>${items.map(row).join('')}</tbody>
         </table>`
-        : `<div class="empty">${icon('folder')}<p>This folder is empty.</p><p>Drop files here, or upload them with <b>+</b>.</p></div>`;
+        : empty;
     renderSelection();
 }
 
@@ -159,6 +215,7 @@ async function rename(item) {
 }
 
 export async function newFolder() {
+    if (state.search !== null) return; // it would land out of sight
     const answer = await ask({
         title: 'New folder',
         iconName: 'folder-plus',
@@ -204,6 +261,7 @@ export function initExplorer() {
             return;
         }
         const action = event.target.closest('[data-act]')?.dataset.act;
+        if (action === 'tags') return openTagger([tr.dataset.path]);
         if (action === 'rename') return rename(itemAt(tr.dataset.path));
         if (action === 'move') return openMove([tr.dataset.path]);
         if (action === 'trash') return trashItems([tr.dataset.path]);
@@ -222,6 +280,7 @@ export function initExplorer() {
     });
 
     $('newFolderBtn').addEventListener('click', newFolder);
+    $('selTag').addEventListener('click', () => openTagger([...state.selected]));
     $('selRename').addEventListener('click', renameSelected);
     $('selMove').addEventListener('click', moveSelected);
     $('selDownload').addEventListener('click', () => download([...state.selected]));

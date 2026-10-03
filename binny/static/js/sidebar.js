@@ -3,7 +3,7 @@
  * and the disk usage. It hides with its button or [, remembered per device; on phones it is a drawer.
  */
 import * as api from './api.js';
-import { ancestors, byName, currentFolder, folderHash, isTrash } from './paths.js';
+import { ancestors, byName, currentFolder, currentSearch, folderHash, isTrash } from './paths.js';
 import { $, esc, formatSize, icon } from './ui.js';
 
 const expanded = new Set(); // branches opened by their arrow
@@ -54,7 +54,8 @@ function treeRow(sub, depth, folder, open) {
     const twisty = sub.has_children
         ? `<button class="twisty" type="button" data-toggle="${esc(sub.path)}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${esc(sub.name)}">${icon('chevron-right')}</button>`
         : '<span class="twisty"></span>';
-    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="cc-shell__row" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${sub.path === folder && !isTrash() ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
+    const current = sub.path === folder && !isTrash() && currentSearch() === null;
+    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="cc-shell__row" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${current ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
 }
 
 function toggleBranch(path, wasOpen) {
@@ -83,6 +84,7 @@ export function toggleSidebar() {
 export function initSidebar() {
     $('sideBtn').addEventListener('click', toggleSidebar);
     $('scrim').addEventListener('click', () => setDrawer(false));
+    $('side').addEventListener('click', (event) => event.target.closest('[data-all-tags]') && setDrawer(false));
     $('tree').addEventListener('click', (event) => {
         const twisty = event.target.closest('[data-toggle]');
         if (twisty) toggleBranch(twisty.dataset.toggle, twisty.getAttribute('aria-expanded') === 'true');

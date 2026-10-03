@@ -6,10 +6,17 @@
 {% endblock %}
 {% block body %}
 <div class="cc-shell app" id="shell">
-    <header class="topbar">
+    <header class="topbar" id="topbar">
         <button class="icon-btn" id="sideBtn" type="button" title="Sidebar ( [ )" aria-label="Show or hide the sidebar"><svg class="i"><use href="#i-panel"/></svg></button>
         <span class="brand"><svg class="logo"><use href="#i-folder"/></svg><span class="cc-wordmark">binny</span></span>
-        <div class="grow"></div>
+        <div class="search" id="searchBox">
+            <svg class="i"><use href="#i-search"/></svg>
+            <input id="searchInput" type="text" placeholder="Filter by tag   -exclude   @name" autocomplete="off" spellcheck="false"
+                   aria-label="Search by tag or name" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest">
+            <button class="icon-btn" id="searchClear" type="button" title="Clear the search" aria-label="Clear the search" hidden><svg class="i"><use href="#i-x"/></svg></button>
+            <span class="kbd" aria-hidden="true">/</span>
+            <div class="suggest" id="suggest" role="listbox" aria-label="Tags" hidden></div>
+        </div>
         <button class="cc-btn cc-btn--primary plus" id="uploadBtn" type="button" title="Upload files (U)" aria-label="Upload files"><svg class="i"><use href="#i-plus"/></svg></button>
         <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
         <form method="post" action="{{ url_for('auth.logout') }}">
@@ -22,6 +29,10 @@
             <section>
                 <div class="cc-eyebrow">Folders</div>
                 <nav class="nav" id="tree" aria-label="Folders"></nav>
+            </section>
+            <section id="tagSection" hidden>
+                <div class="cc-eyebrow">Tags</div>
+                <nav class="nav" id="tagNav" aria-label="Tags"></nav>
             </section>
             <nav class="nav" aria-label="Trash">
                 <a class="cc-shell__row" id="trashNav" href="#trash" data-trash><svg class="i"><use href="#i-trash"/></svg><span>Trash</span><span class="count" id="trashCount"></span></a>
@@ -41,6 +52,7 @@
                 <div class="selbar" id="selbar" hidden>
                     <b id="selCount"></b>
                     <div class="grow"></div>
+                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selTag" type="button" title="Tags (T)"><svg class="i"><use href="#i-tag"/></svg><span>Tag</span></button>
                     <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selRename" type="button"><svg class="i"><use href="#i-rename"/></svg><span>Rename</span></button>
                     <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selMove" type="button"><svg class="i"><use href="#i-move"/></svg><span>Move to…</span></button>
                     <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selDownload" type="button"><svg class="i"><use href="#i-download"/></svg><span id="selDownloadLabel">Download</span></button>
@@ -97,6 +109,22 @@
         <div class="row-btns">
             <button class="cc-btn cc-btn--ghost" type="button" data-close><span>Cancel</span></button>
             <button class="cc-btn cc-btn--primary" id="askOk" type="submit"><span>OK</span></button>
+        </div>
+    </form>
+</dialog>
+
+<dialog class="cc-settings-card dialog tagger" id="tagDialog" aria-labelledby="tagTitle">
+    <form>
+        <header class="cc-card-header"><svg><use href="#i-tag"/></svg><h4 id="tagTitle">Tags</h4><small id="tagWhat"></small></header>
+        <div class="chips" id="tagCurrent"></div>
+        <input class="cc-input" id="tagInput" placeholder="tag   +new   -remove   old>new" autocomplete="off" spellcheck="false" aria-label="Tags to add or take off" aria-describedby="tagPlan">
+        <ul class="plan" id="tagPlan" hidden></ul>
+        <div class="tagger__suggest" id="tagSuggestBox">
+            <div class="tagger__label" id="tagSuggestLabel"></div>
+            <div class="chips" id="tagSuggest"></div>
+        </div>
+        <div class="row-btns">
+            <button class="cc-btn cc-btn--primary" id="tagApply" type="submit"><span>Done</span></button>
         </div>
     </form>
 </dialog>

@@ -19,9 +19,20 @@ still being made. Update them as they settle rather than working around them.
 - **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
   upload (button and drag-and-drop, many files at once), download (single files; folders and
   multi-selections as a zip).
-- **Tags:** any file or folder can carry tags, and the search bar filters by them. Reuse imgy's
-  ideas — a small expression syntax (`tag`, `-tag`, `+tag`, `old>new`), tab completion, bulk tagging
-  of a selection — rather than inventing new ones.
+- **Tags:** any file or folder can carry tags, and the search box finds things anywhere by tag or
+  name. It reuses imgy's ideas rather than inventing new ones: the expression syntax below, tag
+  suggestions with counts, tab completion, and one tag editor for an item or a whole selection that
+  previews what Enter will do. Tags are lowercase, at most 100 characters, with no spaces, commas
+  or `>`, and can't start with `-`, `+` or `@`.
+
+  | Typed | In the search box | In the tag editor (T) |
+  |---|---|---|
+  | `tag` | items that have it | adds a tag already in use |
+  | `-tag` | items that don't | takes it off |
+  | `+tag` | same as `tag` | adds a new tag |
+  | `@text` | names with the text in them, to the end of the line; case, and `_`, `-` and spaces, don't matter | — |
+  | `old>new` | renames a tag everywhere, asking first when that merges two | renames it on these items |
+  | `--tag`, `--` | `--tag` deletes a tag everywhere, after asking | `--` takes every tag off these items |
 - **Trash:** deleting moves an item to the trash, where it can be restored. Nothing is removed for
   good until the trash is **emptied by hand**; no automatic expiry.
 - **Login:** one password, no usernames. A successful login sets a long-lived cookie so each device
@@ -133,10 +144,11 @@ neighbour.
 | `binny/views.py` | The page, the stored files (`/files/<path>`: shown or downloaded, a folder as a zip) and `POST /zip` for a multi-selection. |
 | `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), and `free_name()` for "name (1).ext". |
 | `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. |
+| `binny/tags.py` | The `tags` table: `clean()` for a tag from the client, `of()` and `attach()` to read them, and `move()` and `drop()`, which keep tags with an item through renames, moves and the trash. |
 | `binny/archive.py` | Zips streamed to the browser while they're written. |
-| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, new folder), `trash` (trash, restore, delete forever, empty), then `tags` and `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
+| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), then `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
+| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | Dockerfile and `compose.yml`, as in imgy. |
@@ -157,8 +169,9 @@ you on its own under it:
 - Modules that bind listeners export an `initX()`; `main.js` calls them in order.
 - A module that changes files calls `filesChanged()` (`state.js`); the explorer and the sidebar
   reload on that event. Don't reach into another module to redraw it.
-- Folders are addressed by the hash (`#/photos/2026`, the trash is `#trash`), so back, forward and
-  reload work and a folder can be bookmarked.
+- Folders are addressed by the hash (`#/photos/2026`, the trash is `#trash`, a search is
+  `#search/<query>`), so back, forward and reload work and any of them can be bookmarked. A search
+  keeps `state.folder`, so uploads and new folders still go where it started.
 - The look is the **cavecomputing design system**
   ([reference](https://claude.ai/artifact/TAYcpHgxU55sLKKU2sYeRv): read its `project/README.md`,
   `project/tokens.json` and `project/components/bundle.css`). Copy its tokens and its `bundle.css`
@@ -224,7 +237,11 @@ data/                 # BINNY_DATA_DIR, default ./data
     it in one query each (the primary key serves the range), never stored, so they can't drift.
     The kind (image, video, document, archive…) comes from the extension when listing
     (`storage.KINDS`);
-  - tags, in their own table joined to paths, so a tag search is one indexed query.
+  - `tags`: a row per (path, tag), indexed by tag, so a tag search is one indexed query. Tags go
+    with an item the app renames, moves or trashes (`tags.move()`), and whatever the app creates
+    starts clean (`tags.drop()`). Something moved or deleted outside the app leaves its tags at
+    the old path, where nothing shows them (listings and searches only see indexed paths), and
+    they come back if it returns.
 
   Treat it as a cache of the disk plus the things only it knows (tags, trash records). `entries`
   can always be rebuilt from `data/files/`; comparing `mtime` and size against the disk is how
@@ -238,7 +255,8 @@ data/                 # BINNY_DATA_DIR, default ./data
   through the trash routes. A trashed item keeps its name behind the time it was trashed
   (`<time_ns>_<name>`), and a `trash` row remembers where it came from and its size, so restore
   can put it back (making its folder again if that's gone; a taken name gets " (1)") and the trash
-  never walks a folder to size it. Trashed items keep their tags. Anything in `.trash/` is trash,
+  never walks a folder to size it. Trashed items keep their tags under `.trash/<name>`; renaming or
+  deleting a tag everywhere reaches them too. Anything in `.trash/` is trash,
   rows or not: something put there by hand shows in the trash and restores to the top folder.
 
 ### The downloader fetches URLs on the server's behalf

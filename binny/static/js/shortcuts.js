@@ -1,12 +1,16 @@
 /** Keyboard shortcuts. They stay out of the way while typing in a field or answering a dialog. */
 import { clearSelection, moveSelected, newFolder, renameSelected, selectAll, trashSelected } from './explorer.js';
 import { isTrash } from './paths.js';
+import { focusSearch } from './search.js';
 import { toggleSidebar } from './sidebar.js';
+import { tagSelected } from './tagger.js';
 import { clearTrashSelection, deleteSelectedForever, selectAllTrash } from './trash.js';
 import { pickFiles } from './upload.js';
 
 const FILE_KEYS = {
     '[': toggleSidebar,
+    '/': focusSearch,
+    t: tagSelected,
     u: pickFiles,
     n: newFolder,
     m: moveSelected,
@@ -18,6 +22,7 @@ const FILE_KEYS = {
 
 const TRASH_KEYS = {
     '[': toggleSidebar,
+    '/': focusSearch,
     Delete: deleteSelectedForever,
     Backspace: deleteSelectedForever,
     Escape: clearTrashSelection,
