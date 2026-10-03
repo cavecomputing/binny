@@ -181,9 +181,18 @@ data/                 # BINNY_DATA_DIR, default ./data
   Never rename, hash or wrap files for the app's convenience. Files added, moved or deleted outside
   the app show up on the next listing; the app must cope with that rather than assume it owns the
   tree.
-- **`data/binny.db` holds only metadata**, keyed by the path relative to `data/files/`. Anything
-  the database knows about a file must survive the file disappearing or appearing from outside the
-  app. A move or rename through the app updates its rows in the same request; a row whose file is
+- **`data/binny.db` holds only metadata, never file contents**, keyed by the path relative to
+  `data/files/`. It exists so listing, sorting and tag search never have to walk the disk:
+  - per item: path, folder or file, size in bytes, modified time (`mtime`), and its kind (image,
+    video, document, archive…) from the extension;
+  - tags, in their own table joined to paths, so a tag search is one indexed query;
+  - per folder: item count and total size, so the explorer can show them without recursing.
+
+  Treat it as a cache of the disk plus the things only it knows (tags, trash records). Size, mtime
+  and kind can always be rebuilt from `data/files/`; compare `mtime` and size against the disk to
+  notice outside changes. Tags and trash records cannot be rebuilt, so never drop them in a resync.
+- Because rows are keyed by path, anything the database knows about a file must survive the file
+  disappearing or appearing from outside the app. A move or rename through the app updates its rows in the same request; a row whose file is
   gone is stale, not an error.
 - _(open: trash lives in `data/trash/` by default, so trashed items stay off the user's own view of
   `data/files/`; confirm.)_
