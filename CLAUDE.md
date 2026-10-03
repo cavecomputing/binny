@@ -80,9 +80,10 @@ buries the real diff under noise.
 ## Run / test
 
 Flask backend, vanilla-JS frontend with no build step, same shape as cozy and imgy: SQLite, `uv`,
-pytest, Docker. _(open: the commands below are placeholders until the app exists.)_
+pytest, Docker. _(open: the app and test commands are placeholders until the app exists.)_
 
 ```bash
+uv sync                               # install the locked dependencies into .venv
 uv run app.py --debug                 # dev server
 BINNY_DATA_DIR=/path/to/data uv run app.py   # custom data directory (default: ./data)
 
@@ -91,6 +92,11 @@ uv run pytest tests/test_x.py::test_name -x
 
 docker compose -f docker/compose.yml up --build
 ```
+
+Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; Python is pinned in
+`.python-version`. Change them with `uv add` / `uv remove` (or edit `pyproject.toml` and run
+`uv lock`) and commit both files together. Never `pip install` into the project, and never bump the
+`0.0.0` in `pyproject.toml` — it is a packaging placeholder, not a version.
 
 ### How much verification a change needs
 
@@ -104,8 +110,41 @@ change was verified in the app when it wasn't.
 
 ## Architecture
 
-_(open — fill in as modules land: a table of module → what it owns, plus the rules the code cannot
-tell you on its own.)_
+Single-process Flask app, vanilla-JS frontend, no build step. The layout is meant to be readable at
+a glance: one thing per file, named for what it owns, so finding the code for a feature never takes
+a search. Keep it that way — a new feature gets its own blueprint or module rather than growing a
+neighbour.
+
+| Path | Owns |
+|---|---|
+| `app.py` | Entry point, and the **only** Python file at the repo root: `app = create_app()`, which `uv run app.py` and `gunicorn app:app` both name. No logic lives here. |
+| `binny/` | The application package. Everything else in Python goes in here. |
+| `binny/__init__.py` | `create_app()`: config, the login guard, `init_db()`, blueprint registration. |
+| `binny/config.py` | Paths and limits, read once from the environment (`BINNY_DATA_DIR`, the password). |
+| `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`. |
+| `binny/storage.py` | The one place that turns a user-supplied path into a real one (`safe_path()`), plus file walking. |
+| `binny/api/` | One Flask blueprint per resource — `files`, `folders`, `tags`, `trash`, `downloads`, `auth` — all under `/api`. |
+| `binny/templates/index.html` | The page shell. |
+| `binny/static/js/` | ES modules, one per concern (`api.js`, `state.js`, `explorer.js`, `tags.js`, `trash.js`, `downloads.js`, …), entry `main.js` loaded with `<script type="module">`. |
+| `binny/static/css/` | `cavecomputing.css` (the vendored design system, copied unchanged from imgy) and `style.css` (Binny's layout and Gruvbox tokens). |
+| `tests/` | pytest, one file per blueprint or module. |
+| `docker/` | Dockerfile and `compose.yml`, as in imgy. |
+
+Fill in the "Owns" column with real names as modules land, and add the rules the code can't tell
+you on its own under it.
+
+### Frontend conventions
+
+- Native ES modules only, `import`/`export` with relative paths. No bundler, no framework, no
+  globals except what `main.js` deliberately wires up.
+- Call the server through `api.js`, which throws on errors and shows them to the user.
+- Modules that bind listeners export an `initX()`; `main.js` calls them in order.
+- Colors come from CSS custom properties; don't hardcode them. Follow imgy's accent meanings:
+  yellow for focus and selection, green for the brand and done states, blue for links and paths,
+  orange for anything destructive. Reuse the `cc-*` components before adding new ones.
+- The [interface mockup](https://claude.ai/artifact/7KsCx3jSnVbB6tydGm55db) is the reference for layout: the "+" split button (click uploads files;
+  the arrow opens "Upload from link"), folder and tag sidebar, file table with tag chips, trash
+  view, downloads panel, sign-in card.
 
 ### Files on disk are the user's data
 
