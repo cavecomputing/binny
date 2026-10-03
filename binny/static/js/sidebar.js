@@ -40,10 +40,10 @@ export async function loadTree() {
     if (isTrash()) $('trashNav').setAttribute('aria-current', 'page');
     else $('trashNav').removeAttribute('aria-current');
 
-    const { used, total } = data.disk;
+    const { used, total, free } = data.disk;
     const percent = total ? Math.round((used / total) * 100) : 0;
     $('storage').innerHTML = `
-        <div>${formatSize(used)} of ${formatSize(total)} used</div>
+        <div>${formatSize(used)} of ${formatSize(total)} used <span class="sep">|</span> <span class="free"><b>${formatSize(free)}</b> free</span></div>
         <div class="meter${percent >= 90 ? ' meter--full' : ''}"><i style="width: ${percent}%"></i></div>
         <div>binny holds <b>${formatSize(data.files_size)}</b></div>`;
 }

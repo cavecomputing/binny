@@ -178,7 +178,7 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 mark { background: none; color: var(--accent-text); font-weight: 700; }
 
 /* ---------- sidebar: folder tree and disk usage ---------- */
-.side { width: 240px; overflow-y: auto; gap: var(--app-space-5); }
+.side { width: 280px; overflow-y: auto; gap: var(--app-space-5); }
 .side .cc-eyebrow { color: var(--fg-muted); border: 0; padding: 0 var(--app-space-3); margin: 0 0 var(--app-space-1); }
 .nav { display: flex; flex-direction: column; gap: 2px; }
 .nav .cc-shell__row { display: flex; align-items: center; gap: var(--app-space-3); min-width: 0; text-decoration: none; transition: background 120ms ease, color 120ms ease; }
@@ -195,6 +195,8 @@ button.twisty:hover { background: var(--border); color: var(--fg); }
 .twisty[aria-expanded="true"] .i { transform: rotate(90deg); }
 .storage { padding: 0 var(--app-space-3); font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
 .storage b { color: var(--fg); font-weight: 400; }
+.storage .sep { color: var(--fg-subtle); }
+.storage .free { white-space: nowrap; }
 .meter { height: 6px; margin: 6px 0 4px; border-radius: 3px; background: var(--bg-inset); overflow: hidden; }
 .meter i { display: block; height: 100%; background: var(--accent-alt); }
 .meter--full i { background: var(--accent-warm); }

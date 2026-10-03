@@ -33,7 +33,7 @@ def folder_tree():
                             for row in conn.execute(SUBFOLDERS, (folder,))]
         files_size = index.folder_totals(conn, '')[1]
     disk = shutil.disk_usage(config.FILES_DIR)
-    return {'tree': tree, 'files_size': files_size, 'disk': {'total': disk.total, 'used': disk.used},
+    return {'tree': tree, 'files_size': files_size, 'disk': {'total': disk.total, 'used': disk.used, 'free': disk.free},
             'trash_items': len(trash_entries())}
 
 
