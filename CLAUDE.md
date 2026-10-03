@@ -197,7 +197,10 @@ you on its own under it:
   bar: a `#282828` rounded square with a 24px stroked line icon in one accent, 2.2 stroke, round
   caps. Cozy is yellow, imgy green and campfire orange; Binny's is a folder in aqua, `#6bc7bb`.
   That is Binny's own color, not the design system's `accent-aqua` (`#8ec07c`), which reads as a
-  second green beside imgy. [binny/static/favicon.svg](binny/static/favicon.svg) is the source and
+  second green beside imgy. It is sized like them too: a folder is wider than tall, so at their
+  width it looked small, and the favicon draws it 1.15× larger (stroke kept at 2.2) to cover as
+  much of the tile as their glyphs do. Size a new glyph by the area it covers, not its width.
+  [binny/static/favicon.svg](binny/static/favicon.svg) is the source and
   `favicon.png` (256px) is rendered from it; change both together. The top-left brand is the same
   folder icon beside the `cc-wordmark`, in the `--logo` token: that aqua in dark, `#2d766d` in
   light.

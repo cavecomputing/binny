@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#282828"/>
-  <g transform="translate(4 4)" fill="none" stroke="#6bc7bb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- The 24px folder at 1.15x, centred: a wide glyph looks small at the siblings' width. Stroke is 2.2 / 1.15. -->
+  <g transform="translate(2.2 2.2) scale(1.15)" fill="none" stroke="#6bc7bb" stroke-width="1.913" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
   </g>
 </svg>
