@@ -2,19 +2,34 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Binny is a small, single-user file hosting app for personal use: upload files, keep them, get them
-back. It is early — most of the app does not exist yet — so the sections marked _(open)_ record
-decisions still being made. Update them as they settle rather than working around them.
+Binny is a small, single-user file hosting app for personal use: a file explorer in the browser with
+folders, uploads, downloads, moves, renames, tags and tag search, and a trash. It runs on the LAN or
+over Tailscale behind Caddy and is never exposed to the internet. Its look and its tag handling
+follow [imgy](https://github.com/cavecomputing/imgy).
+
+The app is early — most of it does not exist yet — so sections marked _(open)_ record decisions
+still being made. Update them as they settle rather than working around them.
+
+## What it does, and what it deliberately doesn't
+
+- **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
+  upload (button and drag-and-drop, many files at once), download (single files; folders and
+  multi-selections as a zip).
+- **Tags:** any file or folder can carry tags, and the search bar filters by them. Reuse imgy's
+  ideas — a small expression syntax (`tag`, `-tag`, `+tag`, `old>new`), tab completion, bulk tagging
+  of a selection — rather than inventing new ones.
+- **Trash:** deleting moves an item to the trash, where it can be restored. Nothing is removed for
+  good until the trash is **emptied by hand**; no automatic expiry.
+- **Login:** one password, no usernames. A successful login sets a long-lived cookie so each device
+  only logs in once.
+- **No sharing.** No public links, no second user, no permissions model. Don't add one.
 
 ## Git workflow
 
-**Never commit unless asked.** Finish the work, leave it in the working tree, and report what
-changed and how it was verified. The user reviews the diff themselves and then either asks for a
-commit or makes it manually — that decision is theirs, not a step to anticipate. Don't stage files,
-don't commit "so the work isn't lost", and don't treat a task being finished as permission.
-
-When a commit *is* requested, only include files belonging to the task — leave unrelated
-pre-existing changes and stray untracked files alone.
+Commit as the work goes and **push straight to `main` without asking**: this project uses no
+feature branches or PRs. Only include files belonging to the task, and leave unrelated pre-existing
+changes and stray untracked files alone. Push once a piece of work is done and verified, not
+half-finished.
 
 **One commit, one concern.** A commit has to be reviewable on its own and safe to revert on its own,
 so split unrelated work rather than bundling it: a bug fix and a docs correction that happened to
@@ -22,11 +37,7 @@ land in the same session are two commits. Size is not the test — a change that
 twenty files is still one commit if it is one concern. Say in the message what broke and why the fix
 works, not just what you typed.
 
-**Never push.** The user always pushes themselves. _(open: branches/PRs vs. committing straight to
-`main`.)_
-
-If an AGENTS.md is added, it is a short pointer telling other agents to read this file, not a copy
-of it. This file is the single source of truth.
+This file is the only agent doc. Don't add an `AGENTS.md` or a second copy of these rules.
 
 ## Least code that does the job
 
@@ -64,9 +75,8 @@ buries the real diff under noise.
 
 ## Run / test
 
-_(open: stack not yet chosen. The default assumption is the same shape as Cozy — Flask, vanilla-JS
-SPA with no build step, SQLite, `uv`, pytest, Docker — and the commands below follow it. Replace
-them once the app exists.)_
+Flask backend, vanilla-JS frontend with no build step, same shape as cozy and imgy: SQLite, `uv`,
+pytest, Docker. _(open: the commands below are placeholders until the app exists.)_
 
 ```bash
 uv run app.py --debug                 # dev server
@@ -104,14 +114,23 @@ held to a higher bar than the rest of the code:
   connection never leaves a half-written file under the real name.
 - Stream uploads and downloads; never read a whole file into memory. Downloads should support
   range requests so large files and media resume and seek.
-- Deleting a file is destructive and unrecoverable unless the app says otherwise. _(open: trash /
-  soft delete?)_
+- Delete means **move to trash**. Only "Empty trash" (and deleting a single item from inside the
+  trash) removes a file for good, and both ask for confirmation in the UI.
 
-_(open: storage layout — original names vs. content-addressed; whether a database indexes the
-files or the filesystem is the index; folders vs. flat.)_
+_(open: storage layout. The likely answer, following imgy, is that real folders on disk are the
+source of truth and SQLite only holds metadata — tags, trash records, settings — keyed by path, so
+a move or rename must update those rows in the same request.)_
 
 ### Access
 
-_(open: where it runs and who can reach it — LAN / VPN only, or exposed to the internet; login vs.
-none; public share links and whether they expire.)_ Until this is decided, don't add an endpoint
-that serves files without going through the same access check as the rest.
+Binny sits on the LAN or Tailscale behind a Caddy reverse proxy, never on the public internet, but
+it still has a login because anything on the tailnet can reach it.
+
+- **Every route except the login page and its static assets requires the session cookie**,
+  including file downloads and thumbnails. A new route is behind the check by default, not opted in.
+- The password comes from the environment (or a hash of it in the data directory), never from a
+  file in the repo. Compare it in constant time.
+- The cookie is `HttpOnly`, `SameSite=Lax`, and long-lived (months), so a device stays logged in.
+  _(open: how to log every device out — rotating the secret key is the simplest answer.)_
+- Behind Caddy, honour `X-Forwarded-Proto` only from the proxy so `Secure` cookies and redirects
+  are right; Caddy passes the Host header through unchanged by default.
