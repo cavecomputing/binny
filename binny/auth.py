@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import secrets
+import threading
 import time
 from datetime import timedelta
 
@@ -18,6 +19,14 @@ REMEMBER_FOR = timedelta(days=400)
 
 # Everything else needs a signed-in session, so a new route is protected without opting in.
 OPEN_ENDPOINTS = {'auth.login', 'static'}
+
+# A wrong password from any device holds off every sign-in for a second, the right password
+# included, so guessing goes at one try a second however many requests run side by side. A
+# per-request delay alone let gunicorn's 16 threads try 16 a second. Signed-in devices aren't
+# affected; while someone is guessing, a new device may have to try a few times.
+WRONG_PASSWORD_WAIT = 1  # seconds
+next_try = 0.0  # time.monotonic() before which a sign-in is refused unchecked
+next_try_lock = threading.Lock()
 
 
 class SessionInterface(SecureCookieSessionInterface):
@@ -65,9 +74,16 @@ def login():
         return redirect(local_target(request.args.get('next')))
     if request.method == 'GET':
         return render_template('login.html', error=None)
+    global next_try
     password = request.form.get('password', '')
-    if not hmac.compare_digest(password.encode(), config.PASSWORD.encode()):
-        time.sleep(1)  # makes guessing slow
+    with next_try_lock:
+        if time.monotonic() < next_try:
+            return render_template('login.html', error='Too many wrong passwords just now. Try again in a moment.'), 429
+        right = hmac.compare_digest(password.encode(), config.PASSWORD.encode())
+        if not right:
+            next_try = time.monotonic() + WRONG_PASSWORD_WAIT
+    if not right:
+        time.sleep(WRONG_PASSWORD_WAIT)  # so whoever mistyped can try again as soon as they see this
         return render_template('login.html', error='That password is wrong.'), 401
     session.clear()
     session['signed_in'] = True

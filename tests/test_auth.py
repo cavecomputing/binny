@@ -8,6 +8,7 @@ from .conftest import PASSWORD
 @pytest.fixture(autouse=True)
 def no_wrong_password_delay(monkeypatch):
     monkeypatch.setattr(auth.time, 'sleep', lambda seconds: None)
+    monkeypatch.setattr(auth, 'next_try', 0.0)
 
 
 def session_cookie(response):
@@ -42,6 +43,18 @@ def test_wrong_password_is_refused(anon):
     assert b'That password is wrong.' in response.data
     assert not any(h.startswith('binny_session=') for h in response.headers.getlist('Set-Cookie'))
     assert anon.get('/').status_code == 302
+
+
+def test_wrong_password_holds_off_every_sign_in_for_a_second(anon, monkeypatch):
+    now = 1000.0
+    monkeypatch.setattr(auth.time, 'monotonic', lambda: now)
+    assert anon.post('/login', data={'password': 'nope'}).status_code == 401
+    response = anon.post('/login', data={'password': PASSWORD})  # even the right one, from anywhere
+    assert response.status_code == 429
+    assert b'Too many wrong passwords' in response.data
+    assert anon.get('/').status_code == 302
+    now += auth.WRONG_PASSWORD_WAIT
+    assert anon.post('/login', data={'password': PASSWORD}).status_code == 302
 
 
 def test_remembered_device_gets_a_lasting_cookie(anon):

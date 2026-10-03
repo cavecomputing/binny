@@ -302,7 +302,9 @@ it still has a login because anything on the tailnet can reach it.
   ticked. It is signed with a key derived from a random `secret_key` row in `settings` *and* the
   password, so **changing `BINNY_PASSWORD` signs every device out**; so does deleting that row and
   restarting.
-- A wrong password waits a second before answering, which makes guessing slow.
+- A wrong password holds off every sign-in, from any device, for a second (`auth.next_try`), so
+  guessing goes at one try a second however many requests run at once. Already signed-in devices
+  aren't affected.
 - Behind Caddy, `X-Forwarded-Proto` (via `ProxyFix`) decides whether the cookie is `Secure`: over
   HTTPS it is, over plain HTTP on the LAN it can't be or it would never come back. Caddy passes the
   Host header through unchanged by default.
