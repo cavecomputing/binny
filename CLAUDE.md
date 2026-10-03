@@ -157,6 +157,7 @@ neighbour.
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | `Dockerfile`, `compose.yml` and `entrypoint.sh`, as in imgy: gunicorn with one gthread worker on port 5002, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
+| `assets/` | The README's screenshots. |
 
 Fill in the "Owns" column with real names as modules land, and add the rules the code can't tell
 you on its own under it:
