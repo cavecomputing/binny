@@ -84,7 +84,8 @@ export function toggleSidebar() {
 export function initSidebar() {
     $('sideBtn').addEventListener('click', toggleSidebar);
     $('scrim').addEventListener('click', () => setDrawer(false));
-    $('side').addEventListener('click', (event) => event.target.closest('[data-all-tags]') && setDrawer(false));
+    // A link closes the drawer even when it leads where the page already is, which changes no hash.
+    $('side').addEventListener('click', (event) => event.target.closest('a[href], [data-all-tags]') && setDrawer(false));
     $('tree').addEventListener('click', (event) => {
         const twisty = event.target.closest('[data-toggle]');
         if (twisty) toggleBranch(twisty.dataset.toggle, twisty.getAttribute('aria-expanded') === 'true');
