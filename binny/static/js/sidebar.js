@@ -71,12 +71,11 @@ function toggleBranch(path, wasOpen) {
 
 function setDrawer(open) {
     $('side').classList.toggle('open', open);
-    $('scrim').hidden = !open;
 }
 
 export function initSidebar() {
     $('sideBtn').addEventListener('click', () => setDrawer(!$('side').classList.contains('open')));
-    $('scrim').addEventListener('click', () => setDrawer(false));
+    $('sideClose').addEventListener('click', () => setDrawer(false));
     // A link closes the drawer even when it leads where the page already is, which changes no hash.
     $('side').addEventListener('click', (event) => event.target.closest('a[href], [data-all-tags]') && setDrawer(false));
     $('tree').addEventListener('click', (event) => {

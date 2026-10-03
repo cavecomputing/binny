@@ -176,7 +176,6 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .suggest__note.warn, .suggest__note.warn b { color: var(--accent-warm); }
 .suggest .count, .chip small, .cc-tag small { color: var(--fg-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 mark { background: none; color: var(--accent-text); font-weight: 700; }
-.scrim { position: absolute; inset: 0; z-index: 30; background: var(--scrim); }
 
 /* ---------- sidebar: folder tree and disk usage ---------- */
 .side { width: 240px; overflow-y: auto; gap: var(--app-space-5); }
@@ -200,7 +199,7 @@ button.twisty:hover { background: var(--border); color: var(--fg); }
 .meter i { display: block; height: 100%; background: var(--accent-alt); }
 .meter--full i { background: var(--accent-warm); }
 .side-actions { display: none; }
-#sideBtn { display: none; } /* phones only: the sidebar is always there beside the list */
+#sideBtn, .side-close { display: none; } /* phones only: the sidebar is always there beside the list */
 
 /* ---------- main pane: path, summary, selection, file table ---------- */
 .subbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--app-space-4); padding: var(--app-space-4) var(--app-space-5); border-bottom: 1px solid var(--border-soft); }
@@ -387,9 +386,10 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 @media (max-width: 760px) {
     :root { --dock: 60px; }
     body { padding: max(var(--shell-gap), env(safe-area-inset-top)) max(var(--shell-gap), env(safe-area-inset-right)) max(var(--shell-gap), env(safe-area-inset-bottom)) max(var(--shell-gap), env(safe-area-inset-left)); }
-    .side { display: none; position: absolute; top: 0; left: 0; bottom: 0; z-index: 35; width: min(88vw, 360px); background: var(--bg-surface); box-shadow: var(--shadow-lift); border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+    .side { display: none; position: absolute; inset: 0; z-index: 35; width: auto; border: 0; background: var(--bg-surface); border-radius: var(--radius-lg); } /* covers the whole app, and the X closes it */
     .side.open { display: flex; }
-    #sideBtn { display: inline-grid; }
+    #sideBtn, .side-close { display: inline-grid; }
+    .side-close { align-self: flex-end; flex: none; width: 44px; height: 44px; margin: calc(-1 * var(--app-space-2)) calc(-1 * var(--app-space-2)) calc(-1 * var(--app-space-4)); }
     .topbar { gap: var(--app-space-2); height: 52px; padding-inline: var(--app-space-1) var(--app-space-3); }
     .topbar .brand { margin-right: auto; }
     .topbar .icon-btn { width: 44px; height: 44px; }
