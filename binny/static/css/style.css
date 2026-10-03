@@ -1,8 +1,9 @@
 /* Binny on the cavecomputing design system.
    Tokens: Gruvbox dark on :root (the default on every device), Gruvbox light on [data-theme="light"].
    Accents keep one meaning everywhere: yellow --accent-text for focus, selection and active rows,
-   green --accent-alt for the brand and section icons, aqua for done, blue --accent-cool for paths
-   and links, orange --accent-warm for anything destructive. There is no red.
+   green --accent-alt for section icons, aqua for done, blue --accent-cool for paths and links,
+   orange --accent-warm for anything destructive. There is no red.
+   --logo is Binny's own aqua, as in favicon.svg: the palette's aqua reads as green beside imgy's.
    The design system's own components (cc-*) live in cavecomputing.css. */
 
 :root {
@@ -41,6 +42,7 @@
     --accent-rose: #d3869b;
     --accent-aqua: #8ec07c;
     --accent-aqua-text: #8ec07c;
+    --logo: #6bc7bb;
     --btn-bg: #fabd2f;
     --btn-fg: #1d2021;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.22);
@@ -69,6 +71,7 @@
     --accent-rose: #8f3f71;
     --accent-aqua: #427b58;
     --accent-aqua-text: #376b4b;
+    --logo: #2d766d;
     --btn-bg: #79740e;
     --btn-fg: #fbf1c7;
     --shadow: 0 1px 2px rgba(60, 56, 54, 0.10), 0 8px 24px rgba(60, 56, 54, 0.07);
@@ -123,7 +126,7 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 
 /* ---------- brand ---------- */
 .brand { display: flex; align-items: center; gap: var(--app-space-3); flex: none; }
-.brand .logo { width: 22px; height: 22px; fill: none; stroke: var(--accent-aqua); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.brand .logo { width: 22px; height: 22px; fill: none; stroke: var(--logo); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .brand .cc-wordmark { font-size: 18px; }
 
 /* ---------- the app frame ---------- */

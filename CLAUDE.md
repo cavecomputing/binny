@@ -185,19 +185,21 @@ you on its own under it:
   `cc-tag`, `cc-badge`, `cc-callout`, `cc-card-header`, `cc-input`, …) before writing new ones.
   Change the design system, not the copy.
 - Colors come from its tokens; never hardcode them. Accents keep one meaning: yellow
-  (`accent-text`) for focus, selection and active rows; green (`accent-alt`) for the brand and
-  section icons; aqua for done; blue (`accent-cool`) for paths and links; orange (`accent-warm`) for
-  anything destructive. There is no red. No web fonts: system mono and sans only.
+  (`accent-text`) for focus, selection and active rows; green (`accent-alt`) for section icons;
+  aqua for done; blue (`accent-cool`) for paths and links; orange (`accent-warm`) for anything
+  destructive. There is no red. No web fonts: system mono and sans only.
 - **Dark is the default theme**, whatever the OS prefers. The choice lives in `localStorage`
   (`binny-theme`), so each device keeps its own; never sync it through the server. Apply it in a
   tiny inline script in `<head>` before the stylesheet paints, so a light-theme device doesn't
   flash dark on load. Wrap storage access in `try` so a blocked `localStorage` still gets dark.
 - **Logo and favicon match the sibling apps** (cozy, imgy, campfire) so they sit together in a tab
-  bar: a `#282828` rounded square with a 24px stroked line icon in one Gruvbox accent, 2.2 stroke,
-  round caps. Binny's is a folder in aqua (`#8ec07c`) — cozy is yellow, imgy green, campfire
-  orange. [binny/static/favicon.svg](binny/static/favicon.svg) is the source and `favicon.png`
-  (256px) is rendered from it; change both together. The top-left brand is the same folder icon
-  in `accent-aqua` beside the `cc-wordmark`.
+  bar: a `#282828` rounded square with a 24px stroked line icon in one accent, 2.2 stroke, round
+  caps. Cozy is yellow, imgy green and campfire orange; Binny's is a folder in aqua, `#6bc7bb`.
+  That is Binny's own color, not the design system's `accent-aqua` (`#8ec07c`), which reads as a
+  second green beside imgy. [binny/static/favicon.svg](binny/static/favicon.svg) is the source and
+  `favicon.png` (256px) is rendered from it; change both together. The top-left brand is the same
+  folder icon beside the `cc-wordmark`, in the `--logo` token: that aqua in dark, `#2d766d` in
+  light.
 - The [interface mockup](https://claude.ai/artifact/7KsCx3jSnVbB6tydGm55db) is the reference for layout: the "+" split button (click uploads files;
   the arrow opens "Upload from link"), folder and tag sidebar, file table with tag chips, trash
   view, downloads panel, sign-in card.
