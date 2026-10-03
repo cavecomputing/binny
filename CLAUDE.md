@@ -39,8 +39,9 @@ still being made. Update them as they settle rather than working around them.
   only logs in once.
 - **Downloader:** paste a URL and pick a destination folder; the server fetches the file and saves
   it there, with progress shown in the UI. The download runs server-side, so it keeps going when the
-  browser tab closes. _(open: plain HTTP(S) only, or also yt-dlp-style site support? A queue with
-  several downloads at once?)_
+  browser tab closes. Plain HTTP(S) only, with the standard library (no yt-dlp-style site
+  support); three run at once and the rest wait their turn. The list lives in memory, so a restart
+  empties it and cuts running downloads short.
 - **No sharing.** No public links, no second user, no permissions model. Don't add one.
 
 ## Git workflow
@@ -146,7 +147,8 @@ neighbour.
 | `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. Its scans delete partial files left behind. |
 | `binny/tags.py` | The `tags` table: `clean()` for a tag from the client, `of()` and `attach()` to read them, and `move()` and `drop()`, which keep tags with an item through renames, moves and the trash. |
 | `binny/archive.py` | Zips streamed to the browser while they're written. |
-| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), then `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
+| `binny/downloader.py` | Upload from link: the download jobs, kept in memory, each run in a thread of its own. |
+| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads` (start, list, cancel, clear the finished). `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
 | `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
@@ -157,7 +159,7 @@ Fill in the "Owns" column with real names as modules land, and add the rules the
 you on its own under it:
 
 - **Run one worker process** (threads are fine). `storage.NAME_LOCK`, which stops two writers
-  claiming the same free name, lives in memory, and so will the downloader's jobs.
+  claiming the same free name, lives in memory, and so do the downloader's jobs.
 - `create_app(index_files=False)` skips the startup scan; only the tests use it.
 
 ### Frontend conventions
@@ -265,12 +267,17 @@ data/                 # BINNY_DATA_DIR, default ./data
 
 That makes it the one place where Binny reaches out to the network, so:
 
-- Stream the response to a temp file in the destination's filesystem and rename into place, the
+- Only `http` and `https`, in the link and in every redirect (`downloader.Redirects`). It can reach
+  anything the server can, LAN addresses included; that's deliberate for one user behind a login.
+- Stream the response into a partial file in the destination folder and rename it into place, the
   same as an upload. Never buffer it in memory.
-- Take the filename from `Content-Disposition` or the URL, then run it through the same
-  path-safety check as an upload; never let the remote server choose the path.
-- Cap the size and set connect/read timeouts so one bad URL can't fill the disk or hang a worker.
-- Run it off the request thread (it can take minutes), and keep its state where the UI can poll it.
+- Take the filename from `Content-Disposition` or the URL it ended at, then make it one
+  `check_name()` accepts (`safe_name()`); never let the remote server choose the path.
+- One download can't fill the disk: one whose size won't fit is refused, and any stops before it
+  would leave less than `KEEP_FREE` (1 GB). Connecting and each read time out after 30 seconds, so
+  a dead server can't hold a slot.
+- Run it off the request thread (it can take hours) and keep its state where the page can poll it
+  (`GET /api/downloads`). The threads are daemons, so a restart never waits for a download.
 
 ### Access
 

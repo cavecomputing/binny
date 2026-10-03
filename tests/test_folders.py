@@ -34,3 +34,10 @@ def test_tree_lists_the_subfolders_of_open_folders(client):
     assert tree['a'] == [{'path': 'a/b', 'name': 'b', 'has_children': True}]
     assert response.json['files_size'] == 7
     assert response.json['disk']['total'] >= response.json['disk']['used'] > 0
+
+
+def test_all_folders_lists_every_folder(client, files):
+    for parent, name in [('', 'photos'), ('photos', '2026'), ('', 'docs')]:
+        client.post('/api/folders', json={'parent': parent, 'name': name})
+    upload(client, 'notes.txt')
+    assert sorted(client.get('/api/folders/all').json['folders']) == ['docs', 'photos', 'photos/2026']

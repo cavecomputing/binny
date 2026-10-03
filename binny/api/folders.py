@@ -37,6 +37,13 @@ def folder_tree():
             'trash_items': len(trash_entries())}
 
 
+@bp.get('/folders/all')
+def all_folders():
+    """Every folder's path, for picking where a download goes."""
+    with get_db() as conn:
+        return {'folders': [row['path'] for row in conn.execute('SELECT path FROM entries WHERE is_dir')]}
+
+
 @bp.post('/folders')
 def create_folder():
     data = json_body()
