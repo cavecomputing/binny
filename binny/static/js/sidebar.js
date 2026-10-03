@@ -1,6 +1,6 @@
 /**
  * The sidebar: the folder tree, open along the folder on screen (other branches open by their arrow),
- * and the disk usage. It hides with its button or [, remembered per device; on phones it is a drawer.
+ * and the disk usage. On phones it is a drawer.
  */
 import * as api from './api.js';
 import { ancestors, byName, currentFolder, currentSearch, folderHash, isTrash } from './paths.js';
@@ -8,7 +8,6 @@ import { $, esc, formatSize, icon } from './ui.js';
 
 const expanded = new Set(); // branches opened by their arrow
 const closed = new Set();   // branches along the folder on screen, closed by their arrow
-const phone = matchMedia('(max-width: 760px)');
 let shownFolder = null;
 let latest = 0; // only the newest tree gets drawn
 
@@ -75,14 +74,8 @@ function setDrawer(open) {
     $('scrim').hidden = !open;
 }
 
-export function toggleSidebar() {
-    if (phone.matches) return setDrawer(!$('side').classList.contains('open'));
-    const hidden = document.documentElement.classList.toggle('side-hidden');
-    try { localStorage.setItem('binny-sidebar', hidden ? 'hidden' : 'shown'); } catch { /* lasts this visit */ }
-}
-
 export function initSidebar() {
-    $('sideBtn').addEventListener('click', toggleSidebar);
+    $('sideBtn').addEventListener('click', () => setDrawer(!$('side').classList.contains('open')));
     $('scrim').addEventListener('click', () => setDrawer(false));
     // A link closes the drawer even when it leads where the page already is, which changes no hash.
     $('side').addEventListener('click', (event) => event.target.closest('a[href], [data-all-tags]') && setDrawer(false));

@@ -14,9 +14,9 @@ still being made. Update them as they settle rather than working around them.
 
 - **Navigation has three parts, each with one job:** the sidebar folder tree for moving sideways
   (it opens only the branch you are in; other branches open by their arrow), the breadcrumb for
-  the exact path and moving up, and the file list for moving down. The sidebar collapses (button
-  or `[`, remembered per device) so breadcrumb and list can stand alone; on phones it is a drawer,
-  which also holds the theme switch and sign-out, as the top bar has no room for them there.
+  the exact path and moving up, and the file list for moving down. The sidebar is always shown
+  beside the list; on phones it is a drawer (opened by the top bar's button), which also holds the
+  theme switch and sign-out, as the top bar has no room for them there.
 - **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
   upload (button and drag-and-drop, many files at once), download (single files; folders and
   multi-selections as a zip).

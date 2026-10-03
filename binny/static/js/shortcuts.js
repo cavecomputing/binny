@@ -3,13 +3,11 @@ import { uploadFromLink } from './downloads.js';
 import { clearSelection, moveSelected, newFolder, renameSelected, selectAll, trashSelected } from './explorer.js';
 import { isTrash } from './paths.js';
 import { focusSearch } from './search.js';
-import { toggleSidebar } from './sidebar.js';
 import { tagSelected } from './tagger.js';
 import { clearTrashSelection, deleteSelectedForever, selectAllTrash } from './trash.js';
 import { pickFiles } from './upload.js';
 
 const FILE_KEYS = {
-    '[': toggleSidebar,
     '/': focusSearch,
     t: tagSelected,
     u: pickFiles,
@@ -23,7 +21,6 @@ const FILE_KEYS = {
 };
 
 const TRASH_KEYS = {
-    '[': toggleSidebar,
     '/': focusSearch,
     Delete: deleteSelectedForever,
     Backspace: deleteSelectedForever,

@@ -198,9 +198,7 @@ button.twisty:hover { background: var(--border); color: var(--fg); }
 .meter i { display: block; height: 100%; background: var(--accent-alt); }
 .meter--full i { background: var(--accent-warm); }
 .side-actions { display: none; }
-@media (min-width: 761px) {
-    .side-hidden .side { display: none; }
-}
+#sideBtn { display: none; } /* phones only: the sidebar is always there beside the list */
 
 /* ---------- main pane: path, summary, selection, file table ---------- */
 .subbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--app-space-4); padding: var(--app-space-4) var(--app-space-5); border-bottom: 1px solid var(--border-soft); }
@@ -387,6 +385,7 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 @media (max-width: 760px) {
     .side { display: none; position: absolute; top: 0; left: 0; bottom: 0; z-index: 35; width: min(88vw, 360px); background: var(--bg-surface); box-shadow: var(--shadow-lift); border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
     .side.open { display: flex; }
+    #sideBtn { display: inline-grid; }
     .topbar { gap: var(--app-space-3); padding-inline: var(--app-space-4); }
     .topbar .cc-wordmark, .search .kbd, #themeBtn, .topbar .signout { display: none; }
     .side-actions { display: flex; }
