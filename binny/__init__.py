@@ -1,16 +1,18 @@
 """Binny: a small, single-user file host."""
 import logging
 import mimetypes
+import threading
 from urllib.parse import urlsplit
 
 from flask import Flask, abort, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from . import auth, config, views
+from . import api, auth, config, index, views
 from .db import init_db
 
 
-def create_app():
+def create_app(index_files=True):
+    """The app. index_files=False skips the startup scan of data/files/, for tests."""
     if not config.PASSWORD:
         raise RuntimeError('Set BINNY_PASSWORD to the password that signs devices in.')
     logging.basicConfig(level=logging.INFO)
@@ -35,7 +37,11 @@ def create_app():
     app.before_request(reject_cross_site_writes)
     app.before_request(auth.require_login)
     app.register_blueprint(auth.bp)
+    app.register_blueprint(api.bp)
     app.register_blueprint(views.bp)
+
+    if index_files:
+        threading.Thread(target=index.index_everything, name='index', daemon=True).start()
     return app
 
 

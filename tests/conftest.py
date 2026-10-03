@@ -18,7 +18,7 @@ def data_dir(tmp_path, monkeypatch):
 
 @pytest.fixture
 def app(data_dir):
-    app = create_app()
+    app = create_app(index_files=False)
     app.config['TESTING'] = True
     return app
 
@@ -35,3 +35,21 @@ def client(app):
     client = app.test_client()
     assert client.post('/login', data={'password': PASSWORD}).status_code == 302
     return client
+
+
+@pytest.fixture
+def files(app):
+    """The app's data/files/ folder."""
+    return config.FILES_DIR
+
+
+def upload(client, path, data=b'hello', folder=''):
+    """PUT data to /api/upload as path inside folder."""
+    return client.put('/api/upload', query_string={'folder': folder, 'path': path}, data=data)
+
+
+def listing(client, folder=''):
+    """The items of a folder listing by name."""
+    response = client.get('/api/list', query_string={'folder': folder})
+    assert response.status_code == 200, response.json
+    return {item['name']: item for item in response.json['items']}

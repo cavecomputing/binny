@@ -126,28 +126,39 @@ neighbour.
 |---|---|
 | `app.py` | Entry point, and the **only** Python file at the repo root: `app = create_app()`, which `uv run app.py` and `gunicorn app:app` both name. No logic lives here. |
 | `binny/` | The application package. Everything else in Python goes in here. |
-| `binny/__init__.py` | `create_app()`: cookie settings, `init_db()`, the cross-site write guard, the login guard, blueprints. |
+| `binny/__init__.py` | `create_app()`: cookie settings, `init_db()`, the cross-site write guard, the login guard, blueprints, and the startup scan of `data/files/` in a background thread. |
 | `binny/config.py` | Paths, read once from the environment (`BINNY_DATA_DIR`, `BINNY_PASSWORD`). |
 | `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`, a short-lived connection per use. |
 | `binny/auth.py` | The login: sign-in and sign-out routes, `require_login()` in front of everything else, and the cookie signing key. |
-| `binny/views.py` | The page itself. |
-| `binny/storage.py` | The one place that turns a user-supplied path into a real one (`safe_path()`), plus file walking. |
-| `binny/api/` | One Flask blueprint per resource — `files`, `folders`, `tags`, `trash`, `downloads`, `auth` — all under `/api`. |
+| `binny/views.py` | The page, the stored files (`/files/<path>`: shown or downloaded, a folder as a zip) and `POST /zip` for a multi-selection. |
+| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), and `free_name()` for "name (1).ext". |
+| `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. |
+| `binny/archive.py` | Zips streamed to the browser while they're written. |
+| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (tree, new folder), then `tags`, `trash`, `downloads`. `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern (`api.js`, `state.js`, `explorer.js`, `tags.js`, `trash.js`, `downloads.js`, …), entry `main.js` loaded with `<script type="module">`. |
+| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `explorer.js` (breadcrumb and file table), `sidebar.js` (folder tree), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | Dockerfile and `compose.yml`, as in imgy. |
 
 Fill in the "Owns" column with real names as modules land, and add the rules the code can't tell
-you on its own under it.
+you on its own under it:
+
+- **Run one worker process** (threads are fine). `storage.NAME_LOCK`, which stops two writers
+  claiming the same free name, lives in memory, and so will the downloader's jobs.
+- `create_app(index_files=False)` skips the startup scan; only the tests use it.
 
 ### Frontend conventions
 
 - Native ES modules only, `import`/`export` with relative paths. No bundler, no framework, no
   globals except what `main.js` deliberately wires up.
-- Call the server through `api.js`, which throws on errors and shows them to the user.
+- Call the server through `api.js`, which throws on errors and shows them to the user. The toast is
+  a popover so it shows above an open dialog; a dialog whose action fails stays open (`ask()`).
 - Modules that bind listeners export an `initX()`; `main.js` calls them in order.
+- A module that changes files calls `filesChanged()` (`state.js`); the explorer and the sidebar
+  reload on that event. Don't reach into another module to redraw it.
+- Folders are addressed by the hash (`#/photos/2026`), so back, forward and reload work and a
+  folder can be bookmarked.
 - The look is the **cavecomputing design system**
   ([reference](https://claude.ai/artifact/TAYcpHgxU55sLKKU2sYeRv): read its `project/README.md`,
   `project/tokens.json` and `project/components/bundle.css`). Copy its tokens and its `bundle.css`
@@ -183,6 +194,11 @@ held to a higher bar than the rest of the code:
   connection never leaves a half-written file under the real name.
 - Stream uploads and downloads; never read a whole file into memory. Downloads should support
   range requests so large files and media resume and seek.
+- A taken name gets " (1)", " (2)" … (`free_name()`); an upload or a move never overwrites. Only a
+  rename refuses a taken name, because the user typed it.
+- A stored file opens in the browser only if that can't run anything as part of Binny: media, PDFs
+  and text, with all text (HTML too) sent as `text/plain` and SVG sandboxed. Everything else
+  downloads (`views.shown_as()`).
 - Delete means **move to trash**. Only "Empty trash" (and deleting a single item from inside the
   trash) removes a file for good, and both ask for confirmation in the UI.
 
@@ -198,18 +214,22 @@ data/                 # BINNY_DATA_DIR, default ./data
 - **`data/files/` is the source of truth.** It is a plain folder tree the user can open in any file
   manager, so the app's folders are real folders and a file's name on disk is its name in the app.
   Never rename, hash or wrap files for the app's convenience. Files added, moved or deleted outside
-  the app show up on the next listing; the app must cope with that rather than assume it owns the
-  tree.
+  the app show up on the next listing of their folder or of a folder above it whose modified time
+  moved (`index.refresh()`), and everywhere after a restart; the app must cope with that rather than
+  assume it owns the tree.
 - **`data/binny.db` holds only metadata, never file contents**, keyed by the path relative to
   `data/files/`. It exists so listing, sorting and tag search never have to walk the disk:
-  - per item: path, folder or file, size in bytes, modified time (`mtime`), and its kind (image,
-    video, document, archive…) from the extension;
-  - tags, in their own table joined to paths, so a tag search is one indexed query;
-  - per folder: item count and total size, so the explorer can show them without recursing.
+  - `entries`: a row per visible file and folder with its path, parent folder, size in bytes and
+    modified time (`mtime`). A folder's item count and total size are summed from the rows below
+    it in one query each (the primary key serves the range), never stored, so they can't drift.
+    The kind (image, video, document, archive…) comes from the extension when listing
+    (`storage.KINDS`);
+  - tags, in their own table joined to paths, so a tag search is one indexed query.
 
-  Treat it as a cache of the disk plus the things only it knows (tags, trash records). Size, mtime
-  and kind can always be rebuilt from `data/files/`; compare `mtime` and size against the disk to
-  notice outside changes. Tags and trash records cannot be rebuilt, so never drop them in a resync.
+  Treat it as a cache of the disk plus the things only it knows (tags, trash records). `entries`
+  can always be rebuilt from `data/files/`; comparing `mtime` and size against the disk is how
+  outside changes are noticed. Tags and trash records cannot be rebuilt, so never drop them in a
+  resync.
 - Because rows are keyed by path, anything the database knows about a file must survive the file
   disappearing or appearing from outside the app. A move or rename through the app updates its rows in the same request; a row whose file is
   gone is stale, not an error.
@@ -258,4 +278,5 @@ it still has a login because anything on the tailnet can reach it.
 password at a temporary directory with `monkeypatch`. That only works because every module reads
 them as `config.FILES_DIR` at call time; a `from .config import FILES_DIR` binds the value at
 import, the patch never reaches it, and the tests quietly start writing into the real `data/`.
-Use the `client` fixture for a signed-in test client and `anon` for one that isn't.
+Use the `client` fixture for a signed-in test client and `anon` for one that isn't, `files` for the
+temporary `data/files/`, and conftest's `upload()` and `listing()` helpers to drive the API.

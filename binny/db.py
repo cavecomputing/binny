@@ -5,6 +5,17 @@ from contextlib import contextmanager
 from . import config
 
 SCHEMA = '''
+    -- One row per visible file and folder under data/files/ (see index.py). path is relative to
+    -- data/files/ with "/" separators; parent is '' for the top folder. Folders keep size 0: their
+    -- totals are summed from the rows below them.
+    CREATE TABLE IF NOT EXISTS entries (
+        path TEXT PRIMARY KEY,
+        parent TEXT NOT NULL,
+        is_dir INTEGER NOT NULL,
+        size INTEGER NOT NULL,
+        mtime REAL NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_entries_parent ON entries(parent);
     CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
