@@ -126,7 +126,7 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 
 /* ---------- brand ---------- */
 .brand { display: flex; align-items: center; gap: var(--app-space-3); flex: none; line-height: 1; }
-.brand .logo { width: 22px; height: 22px; fill: none; stroke: var(--logo); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.brand .logo { width: 22px; height: 22px; fill: none; stroke: var(--logo); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: translateY(-8%); } /* the folder is centred in its box, but lowercase text's ink sits above the line box's centre */
 .brand .cc-wordmark { font-size: 18px; }
 
 /* ---------- the app frame ---------- */
