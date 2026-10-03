@@ -385,17 +385,26 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 
 /* ---------- phones: the sidebar becomes a drawer, the table keeps name and actions ---------- */
 @media (max-width: 760px) {
+    :root { --dock: 60px; }
+    body { padding: max(var(--shell-gap), env(safe-area-inset-top)) max(var(--shell-gap), env(safe-area-inset-right)) max(var(--shell-gap), env(safe-area-inset-bottom)) max(var(--shell-gap), env(safe-area-inset-left)); }
     .side { display: none; position: absolute; top: 0; left: 0; bottom: 0; z-index: 35; width: min(88vw, 360px); background: var(--bg-surface); box-shadow: var(--shadow-lift); border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
     .side.open { display: flex; }
     #sideBtn { display: inline-grid; }
     .topbar { gap: var(--app-space-2); height: 52px; padding-inline: var(--app-space-1) var(--app-space-3); }
-    .topbar .brand { margin-right: 0; }
+    .topbar .brand { margin-right: auto; }
     .topbar .icon-btn { width: 44px; height: 44px; }
-    .topbar .cc-wordmark, .search .kbd, #themeBtn, .topbar .signout { display: none; }
+    .search .kbd, #themeBtn, .topbar .signout { display: none; }
     .side-actions { display: flex; }
-    .topbar.searching > :not(.search) { display: none; } /* the box takes the whole bar while typing */
-    .search, .split { height: 40px; }
+    .split { height: 40px; }
     .icon-btn { width: 40px; height: 40px; }
+    /* Search is a dock along the bottom, in thumb's reach and out of the top bar's way; its suggestions open upward. */
+    .body { padding-bottom: var(--dock); }
+    .app::after { content: ""; position: absolute; inset: auto 0 0; height: var(--dock); border-top: 1px solid var(--border); }
+    .search { position: absolute; z-index: 2; inset: auto var(--app-space-4) var(--app-space-3); max-width: none; height: 44px; margin: 0; }
+    .search input { font-size: 16px; } /* iOS zooms into anything smaller when it's focused */
+    .search input::placeholder { font-size: 13px; } /* so all of it still fits */
+    .search .icon-btn { width: 32px; height: 32px; }
+    .suggest { top: auto; bottom: calc(100% + 6px); }
     .subbar, .selbar { padding-inline: var(--app-space-4); }
     .col-size, .col-mod, .col-tags { display: none; }
     .files td:has(> .name) { width: 100%; }
@@ -404,7 +413,8 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .acts { opacity: 1; }
     .acts .opt { display: none; }
     .acts .icon-btn { width: 36px; height: 36px; }
-    .uploads { left: var(--app-space-4); right: var(--app-space-4); bottom: var(--app-space-4); width: auto; }
+    .uploads { left: var(--app-space-4); right: var(--app-space-4); bottom: calc(var(--dock) + var(--app-space-4)); width: auto; }
+    .toast { inset-block-end: calc(var(--dock) + var(--app-space-5) + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

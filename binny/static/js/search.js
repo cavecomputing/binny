@@ -228,14 +228,8 @@ const syncClear = () => { $('searchClear').hidden = !input().value && currentSea
 export function initSearch() {
     const box = input();
     syncBox();
-    box.addEventListener('focus', () => {
-        $('topbar').classList.add('searching');
-        renderSuggestions();
-    });
-    box.addEventListener('blur', () => {
-        $('topbar').classList.remove('searching');
-        hideSuggestions();
-    });
+    box.addEventListener('focus', renderSuggestions);
+    box.addEventListener('blur', hideSuggestions);
     box.addEventListener('click', () => $('suggest').hidden && renderSuggestions()); // back after an Enter
     box.addEventListener('input', () => {
         active = -1;
