@@ -33,6 +33,17 @@ def test_trash_moves_a_file_into_the_hidden_trash(client, files):
     assert client.get('/api/folders').json['trash_items'] == 1
 
 
+def test_a_name_as_long_as_the_disk_allows_trashes_and_restores(client, files):
+    name = 'a' * 251 + '.txt'
+    upload(client, name, b'long')
+    names = trash(client, name)
+    [item] = trash_items(client)
+    assert (item['original'], item['kind']) == (name, 'doc')
+    upload(client, name, b'taken')
+    assert client.post('/api/trash/restore', json={'names': names}).json == {'restored': ['a' * 247 + ' (1).txt']}
+    assert (files / ('a' * 247 + ' (1).txt')).read_bytes() == b'long'
+
+
 def test_trashing_a_folder_drops_its_rows_and_remembers_its_size(client, files):
     upload(client, 'trip/day/a.jpg', b'123')
     upload(client, 'trip/b.jpg', b'45')

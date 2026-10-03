@@ -63,13 +63,14 @@ def list_trash():
         record = records.get(entry.name)
         st = entry.stat(follow_symlinks=False)
         is_dir = entry.is_dir(follow_symlinks=False)
+        original = record['original'] if record else name
         items.append({
             'name': entry.name,
-            'original': record['original'] if record else name,
+            'original': original,
             'is_dir': is_dir,
             'size': record['size'] if record else (0 if is_dir else st.st_size),
             'trashed_at': trashed_at or st.st_mtime,
-            'kind': storage.kind_of(name, is_dir),
+            'kind': storage.kind_of(storage.name_of(original), is_dir),
         })
     items.sort(key=lambda item: item['trashed_at'], reverse=True)
     return {'items': items}
@@ -87,7 +88,7 @@ def trash():
             index.refresh(path)  # so its size counts what's in it now
         with get_db() as conn:
             size = index.folder_totals(conn, path)[1] if is_dir else item.stat().st_size
-            name = f'{time.time_ns()}_{item.name}'
+            name = storage.shortened(f'{time.time_ns()}_{item.name}', storage.MAX_NAME_BYTES)  # the row keeps it whole
             os.rename(item, config.TRASH_DIR / name)
             index.forget(conn, path)
             tags.move(conn, path, f'.trash/{name}')

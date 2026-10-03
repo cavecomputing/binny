@@ -24,6 +24,9 @@ KIND_BY_EXTENSION = {ext: kind for kind, extensions in KINDS.items() for ext in 
 # Kept whole when 'name (1)' is slotted in front of an extension.
 DOUBLE_EXTENSIONS = ('.tar.gz', '.tar.bz2', '.tar.xz', '.tar.zst')
 
+# The most a file or folder name can take on disk (Linux and most filesystems).
+MAX_NAME_BYTES = 255
+
 # A file being uploaded or downloaded, hidden until it's complete (see partial_in()).
 PARTIAL = re.compile(r'\.binny-[0-9a-f]{32}\.part')
 
@@ -65,13 +68,14 @@ def check_name(name):
         raise InvalidPath('Names can\'t contain "/" or control characters')
     if name.startswith('.'):
         raise InvalidPath('Names can\'t start with "." (Binny hides those)')
-    if len(name.encode()) > 255:
+    if len(name.encode()) > MAX_NAME_BYTES:
         raise InvalidPath('That name is too long')
     return name
 
 
 def numbered(name, is_dir=False):
-    """name, then 'name (1).ext', 'name (2).ext' and so on, without end."""
+    """name, then 'name (1).ext', 'name (2).ext' and so on, without end. A long name loses the end of
+    its stem to make room for the number."""
     stem, ext = name, ''
     if not is_dir:
         ext = next((e for e in DOUBLE_EXTENSIONS if name.lower().endswith(e)), None) or os.path.splitext(name)[1]
@@ -79,8 +83,14 @@ def numbered(name, is_dir=False):
     yield name
     n = 1
     while True:
-        yield f'{stem} ({n}){ext}'
+        number = f' ({n}){ext}'
+        yield shortened(stem, MAX_NAME_BYTES - len(number.encode())) + number
         n += 1
+
+
+def shortened(text, max_bytes):
+    """text cut to at most max_bytes of UTF-8, never inside a character."""
+    return text.encode()[:max(max_bytes, 0)].decode(errors='ignore')
 
 
 def free_name(folder: Path, name, is_dir=False):

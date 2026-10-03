@@ -59,6 +59,15 @@ def test_free_name_keeps_a_folders_dots(files):
     assert storage.free_name(files, 'v1.2', is_dir=True) == 'v1.2 (1)'
 
 
+def test_free_name_shortens_a_long_name_to_fit_its_number(files):
+    name = 'é' * 125 + '.txt'  # 254 bytes
+    (files / name).write_text('x')
+    numbered = storage.free_name(files, name)
+    assert numbered == 'é' * 123 + ' (1).txt'  # never half a character
+    assert len(numbered.encode()) <= 255
+    (files / numbered).write_text('x')  # the disk takes it
+
+
 def test_kind_comes_from_the_extension():
     assert storage.kind_of('Photo.JPG', False) == 'image'
     assert storage.kind_of('photos.jpg', True) == 'folder'
