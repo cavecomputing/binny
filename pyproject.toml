@@ -1,0 +1,18 @@
+[project]
+name = "binny"
+version = "0.0.0" # Packaging placeholder; running builds use their Git commit.
+description = "A single-user Flask web app for hosting your own files."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "gunicorn>=23.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+]
+
+[tool.uv]
+package = false
