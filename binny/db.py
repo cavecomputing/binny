@@ -24,6 +24,14 @@ SCHEMA = '''
         original TEXT NOT NULL,
         size INTEGER NOT NULL
     );
+    -- Tags, keyed by path like entries (see tags.py). A trashed item's tags wait under
+    -- ".trash/<its name there>" until it is restored or deleted.
+    CREATE TABLE IF NOT EXISTS tags (
+        path TEXT NOT NULL,
+        tag TEXT NOT NULL,
+        PRIMARY KEY (path, tag)
+    );
+    CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag);
     CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL

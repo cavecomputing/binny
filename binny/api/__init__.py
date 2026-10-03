@@ -5,12 +5,12 @@ import os
 from flask import Blueprint, jsonify, request
 from werkzeug.exceptions import HTTPException
 
-from . import files, folders, trash
+from . import files, folders, tags, trash
 
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('api', __name__, url_prefix='/api')
-for module in (files, folders, trash):
+for module in (files, folders, tags, trash):
     bp.register_blueprint(module.bp)
 
 

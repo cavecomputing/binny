@@ -5,7 +5,7 @@ import uuid
 
 from flask import Blueprint, abort, request
 
-from .. import index, storage
+from .. import index, storage, tags
 from ..db import get_db
 from .common import folder_arg, item_arg, items_arg, json_body, name_arg
 
@@ -19,7 +19,7 @@ def list_folder():
     index.refresh(folder)
     with get_db() as conn:
         rows = conn.execute('SELECT * FROM entries WHERE parent = ?', (folder,)).fetchall()
-        return {'folder': folder, 'items': index.describe(conn, rows)}
+        return {'folder': folder, 'items': tags.attach(conn, index.describe(conn, rows))}
 
 
 @bp.put('/upload')
@@ -39,6 +39,12 @@ def upload():
         target_dir = storage.resolve(folder)
     except storage.InvalidPath as e:
         abort(409, str(e))
+    if created:
+        with get_db() as conn:
+            for added in created:
+                index.record(conn, added)
+                tags.drop(conn, added)
+            conn.commit()
 
     partial = target_dir / f'.binny-{uuid.uuid4().hex}.part'
     try:
@@ -52,8 +58,8 @@ def upload():
 
     path = storage.child(folder, name)
     with get_db() as conn:
-        for added in created + [path]:
-            index.record(conn, added)
+        index.record(conn, path)
+        tags.drop(conn, path)
         conn.commit()
     return {'path': path}, 201
 
@@ -71,6 +77,7 @@ def rename():
             os.rename(item, item.parent / name)
         with get_db() as conn:
             index.move_rows(conn, path, new_path)
+            tags.move(conn, path, new_path)
             conn.commit()
     return {'path': new_path}
 
@@ -94,6 +101,7 @@ def move():
             os.rename(item, dest_dir / name)
         with get_db() as conn:
             index.move_rows(conn, path, storage.child(dest, name))
+            tags.move(conn, path, storage.child(dest, name))
             conn.commit()
         moved += 1
         renamed += name != item.name

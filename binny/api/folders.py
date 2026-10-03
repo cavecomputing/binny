@@ -3,7 +3,7 @@ import shutil
 
 from flask import Blueprint, abort, request
 
-from .. import config, index, storage
+from .. import config, index, storage, tags
 from ..db import get_db
 from .common import folder_arg, json_body, name_arg
 from .trash import trash_entries
@@ -49,5 +49,6 @@ def create_folder():
     path = storage.child(parent, name)
     with get_db() as conn:
         index.record(conn, path)
+        tags.drop(conn, path)
         conn.commit()
     return {'path': path}, 201

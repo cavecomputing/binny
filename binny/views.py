@@ -48,8 +48,15 @@ def stored_file(path):
 
 @bp.post('/zip')
 def zip_download():
-    """Several files and folders as one zip named after the folder they're in. It is a plain form
-    post, so the browser saves the response as it arrives instead of the page holding it."""
+    """Several files and folders as one zip, named after the folder they're in ("files" when a search
+    picked them from several). It is a plain form post, so the browser saves the response as it
+    arrives instead of the page holding it."""
     items = items_arg(request.form.getlist('paths'))
-    folder = storage.name_of(storage.parent_of(items[0][0])) or 'files'
-    return archive.download([(item, storage.name_of(rel)) for rel, item in items], folder)
+    folders = {storage.parent_of(rel) for rel, _ in items}
+    zip_name = storage.name_of(folders.pop()) if len(folders) == 1 else ''
+    taken, named = set(), []
+    for rel, item in items:  # two picked from different folders can share a name: number the second
+        name = next(n for n in storage.numbered(storage.name_of(rel), item.is_dir()) if n.lower() not in taken)
+        taken.add(name.lower())
+        named.append((item, name))
+    return archive.download(named, zip_name or 'files')

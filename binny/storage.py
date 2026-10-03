@@ -65,17 +65,22 @@ def check_name(name):
     return name
 
 
-def free_name(folder: Path, name, is_dir=False):
-    """name, or 'name (1).ext', 'name (2).ext' and so on: the first not taken in folder. Hold NAME_LOCK."""
+def numbered(name, is_dir=False):
+    """name, then 'name (1).ext', 'name (2).ext' and so on, without end."""
     stem, ext = name, ''
     if not is_dir:
         ext = next((e for e in DOUBLE_EXTENSIONS if name.lower().endswith(e)), None) or os.path.splitext(name)[1]
         stem = name[:len(name) - len(ext)] if ext else name
-    candidate, n = name, 1
-    while os.path.lexists(folder / candidate):
-        candidate = f'{stem} ({n}){ext}'
+    yield name
+    n = 1
+    while True:
+        yield f'{stem} ({n}){ext}'
         n += 1
-    return candidate
+
+
+def free_name(folder: Path, name, is_dir=False):
+    """The first of numbered(name) not taken in folder. Hold NAME_LOCK."""
+    return next(candidate for candidate in numbered(name, is_dir) if not os.path.lexists(folder / candidate))
 
 
 def make_folders(path):

@@ -1,8 +1,8 @@
 """The trash: moving files and folders into data/files/.trash/, restoring them, deleting them for good.
 
 A trashed item keeps its name behind the time it was trashed, "<time_ns>_<name>", and a row in the
-trash table remembers where it came from. Anything in .trash/ counts as trash, including things put
-there by hand; those restore to the top folder.
+trash table remembers where it came from. Its tags wait under ".trash/<that name>". Anything in
+.trash/ counts as trash, including things put there by hand; those restore to the top folder.
 """
 import os
 import shutil
@@ -10,7 +10,7 @@ import time
 
 from flask import Blueprint, abort
 
-from .. import config, index, storage
+from .. import config, index, storage, tags
 from ..db import get_db
 from .common import items_arg, json_body
 
@@ -90,6 +90,7 @@ def trash():
             name = f'{time.time_ns()}_{item.name}'
             os.rename(item, config.TRASH_DIR / name)
             index.forget(conn, path)
+            tags.move(conn, path, f'.trash/{name}')
             conn.execute('INSERT INTO trash (name, original, size) VALUES (?, ?, ?)', (name, path, size))
             conn.commit()
         names.append(name)
@@ -119,6 +120,9 @@ def restore():
             path = storage.child(parent, restored_name)
             for added in created + [path]:
                 index.record(conn, added)
+            for added in created:
+                tags.drop(conn, added)
+            tags.move(conn, f'.trash/{name}', path)
             conn.execute('DELETE FROM trash WHERE name = ?', (name,))
             conn.commit()
         if is_dir:
@@ -134,6 +138,8 @@ def delete_forever():
         remove(config.TRASH_DIR / name)
     with get_db() as conn:
         conn.executemany('DELETE FROM trash WHERE name = ?', [(name,) for name in names])
+        for name in names:
+            tags.drop(conn, f'.trash/{name}')
         conn.commit()
     return {'deleted': len(names)}
 
@@ -145,5 +151,6 @@ def empty():
         remove(config.TRASH_DIR / entry.name)
     with get_db() as conn:
         conn.execute('DELETE FROM trash')
+        tags.drop(conn, '.trash')
         conn.commit()
     return {'deleted': len(entries)}

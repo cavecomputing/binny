@@ -47,13 +47,30 @@ def item_arg(path):
     return rel, item
 
 
-def items_arg(paths, limit=10_000):
-    """A list of existing files and folders the client named, de-duplicated in order."""
+def items_arg(paths, limit=10_000, keep_nested=False):
+    """A list of existing files and folders the client named, de-duplicated in order.
+
+    Unless keep_nested is set, an item inside another listed folder is left out: moving, trashing
+    or zipping the folder takes it along. (A search can list both.)
+    """
     if not isinstance(paths, list) or not paths:
         abort(400, 'Pick at least one file or folder')
     if len(paths) > limit:
         abort(400, f'Pick at most {limit} items at a time')
-    return list(dict(item_arg(path) for path in paths).items())
+    items = dict(item_arg(path) for path in paths)
+    if not keep_nested:
+        items = {rel: item for rel, item in items.items() if not inside_any(rel, items)}
+    return list(items.items())
+
+
+def inside_any(rel, folders):
+    """Whether rel is below one of folders."""
+    parent = storage.parent_of(rel)
+    while parent:
+        if parent in folders:
+            return True
+        parent = storage.parent_of(parent)
+    return False
 
 
 def name_arg(name):
