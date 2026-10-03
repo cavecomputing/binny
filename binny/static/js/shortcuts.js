@@ -1,4 +1,5 @@
 /** Keyboard shortcuts. They stay out of the way while typing in a field or answering a dialog. */
+import { uploadFromLink } from './downloads.js';
 import { clearSelection, moveSelected, newFolder, renameSelected, selectAll, trashSelected } from './explorer.js';
 import { isTrash } from './paths.js';
 import { focusSearch } from './search.js';
@@ -12,6 +13,7 @@ const FILE_KEYS = {
     '/': focusSearch,
     t: tagSelected,
     u: pickFiles,
+    l: uploadFromLink,
     n: newFolder,
     m: moveSelected,
     F2: renameSelected,

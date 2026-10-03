@@ -130,8 +130,22 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .app { height: 100%; min-height: 480px; flex-direction: column; position: relative; }
 .topbar { display: flex; align-items: center; gap: var(--app-space-4); padding: var(--app-space-4) var(--app-space-5); border-bottom: 1px solid var(--border); }
 .topbar form { display: contents; }
-.topbar .plus { padding-inline: .75em; box-shadow: none; }
-.topbar .plus .i { width: 18px; height: 18px; stroke-width: 2.25; }
+.icon-btn .cc-badge--count { position: absolute; top: -3px; right: -5px; min-width: 18px; padding: 0 5px; font-size: 10px; }
+
+/* ---------- the + split button: click uploads files, the arrow opens the other ways in ---------- */
+.split { position: relative; display: flex; flex: none; }
+.split .cc-btn { box-shadow: none; }
+.split:hover .cc-btn { transform: none; }
+.split .plus { padding-inline: .75em; border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.split .plus .i { width: 18px; height: 18px; stroke-width: 2.25; }
+.split .caret { padding-inline: .45em; border-left: 1px solid var(--bg-page); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 270px; padding: var(--app-space-2); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lift); }
+.menu button { display: flex; width: 100%; align-items: center; gap: var(--app-space-4); padding: var(--app-space-3) var(--app-space-4); border: 0; border-radius: var(--radius-sm); background: none; text-align: left; }
+.menu button:hover, .menu button:focus-visible { background: var(--border); outline: 0; }
+.menu button > .i { width: 20px; height: 20px; color: var(--accent-alt); }
+.menu b { display: block; font-family: var(--font-mono); font-size: 13px; }
+.menu small { display: block; color: var(--fg-muted); font-size: 12px; }
+.menu .kbd { margin-left: auto; }
 .grow { flex: 1; }
 .body { flex: 1; min-height: 0; display: flex; }
 
@@ -180,6 +194,7 @@ button.twisty:hover { background: var(--border); color: var(--fg); }
 .meter { height: 6px; margin: 6px 0 4px; border-radius: 3px; background: var(--bg-inset); overflow: hidden; }
 .meter i { display: block; height: 100%; background: var(--accent-alt); }
 .meter--full i { background: var(--accent-warm); }
+.side-actions { display: none; }
 @media (min-width: 761px) {
     .side-hidden .side { display: none; }
 }
@@ -276,6 +291,35 @@ tr.row:hover .acts, tr.row:focus-within .acts, .acts--shown { opacity: 1; }
 .uploads--done .bar i { background: var(--accent-aqua); }
 .uploads--failed .bar i { background: var(--accent-warm); }
 
+/* ---------- the downloads panel, a sheet on the right ---------- */
+.panel { position: fixed; inset: 0 0 0 auto; width: min(420px, 100%); max-width: none; height: 100%; max-height: none; margin: 0; padding: 0; border: 0; border-left: 1px solid var(--border); background: var(--bg-surface); color: var(--fg); box-shadow: var(--shadow-lift); }
+.panel[open] { display: flex; flex-direction: column; animation: slide-in 160ms ease-out; }
+.panel::backdrop { background: var(--scrim); }
+@keyframes slide-in { from { transform: translateX(24px); opacity: 0; } }
+.panel .cc-card-header { margin: 0; padding: var(--app-space-4) var(--app-space-5); }
+.panel .cc-card-header .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+.panel__body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--app-space-6); padding: var(--app-space-5); }
+.panel__body form { display: flex; flex-direction: column; gap: var(--app-space-4); }
+.panel__body .cc-input { font-family: var(--font-mono); }
+.panel__head { display: flex; align-items: center; gap: var(--app-space-3); min-height: 28px; margin-bottom: var(--app-space-3); }
+.panel__head .cc-eyebrow { flex: 1; margin: 0; padding: 0; border: 0; color: var(--fg-muted); }
+.panel__none { margin: 0; color: var(--fg-muted); font-size: 13px; }
+.dls { display: flex; flex-direction: column; gap: var(--app-space-3); }
+.dl { display: flex; flex-direction: column; gap: var(--app-space-2); padding: var(--app-space-3) var(--app-space-4) var(--app-space-4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius); }
+.dl__top, .dl__bottom { display: flex; align-items: center; gap: var(--app-space-3); min-width: 0; }
+.dl__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: 13px; }
+.dl__top .icon-btn { width: 26px; height: 26px; margin: -4px -8px -4px 0; }
+.dl__top .icon-btn:hover { color: var(--accent-warm); }
+.dl__bottom .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+.dl__bottom .path:hover { text-decoration: underline; }
+.dl__error { color: var(--accent-warm); font-size: 12px; overflow-wrap: anywhere; }
+.dl__error:empty { display: none; }
+.dl--done .bar i { background: var(--accent-aqua); }
+.dl--failed .bar i { background: var(--accent-warm); }
+.dl--cancelled .bar i, .dl--cancelling .bar i { background: var(--fg-subtle); }
+.bar--busy i { width: 30% !important; animation: busy 1.2s ease-in-out infinite; }
+@keyframes busy { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
 /* ---------- dialogs and the toast ---------- */
 .dialog { width: min(420px, calc(100% - 32px)); padding: 0; color: var(--fg); }
 .dialog::backdrop { background: var(--scrim); }
@@ -333,7 +377,8 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .side { display: none; position: absolute; top: 0; left: 0; bottom: 0; z-index: 35; width: min(88vw, 360px); background: var(--bg-surface); box-shadow: var(--shadow-lift); border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
     .side.open { display: flex; }
     .topbar { gap: var(--app-space-3); padding-inline: var(--app-space-4); }
-    .topbar .cc-wordmark, .search .kbd { display: none; }
+    .topbar .cc-wordmark, .search .kbd, #themeBtn, .topbar .signout { display: none; }
+    .side-actions { display: flex; }
     .topbar.searching > :not(.search) { display: none; } /* the box takes the whole bar while typing */
     .search { height: 40px; }
     .icon-btn { width: 40px; height: 40px; }

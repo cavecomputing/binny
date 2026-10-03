@@ -17,9 +17,16 @@
             <span class="kbd" aria-hidden="true">/</span>
             <div class="suggest" id="suggest" role="listbox" aria-label="Tags" hidden></div>
         </div>
-        <button class="cc-btn cc-btn--primary plus" id="uploadBtn" type="button" title="Upload files (U)" aria-label="Upload files"><svg class="i"><use href="#i-plus"/></svg></button>
+        <div class="split" id="upload">
+            <button class="cc-btn cc-btn--primary plus" id="uploadBtn" type="button" title="Upload files (U)" aria-label="Upload files"><svg class="i"><use href="#i-plus"/></svg></button>
+            <button class="cc-btn cc-btn--primary caret" id="uploadCaret" type="button" title="More ways to upload" aria-label="More ways to upload" aria-haspopup="menu" aria-expanded="false" aria-controls="uploadMenu"><svg class="i"><use href="#i-chevron-down"/></svg></button>
+            <div class="menu" id="uploadMenu" role="menu" hidden>
+                <button type="button" role="menuitem" id="fromLink"><svg class="i"><use href="#i-link"/></svg><span><b>Upload from link</b><small>Binny downloads it into this folder</small></span><span class="kbd">L</span></button>
+            </div>
+        </div>
+        <button class="icon-btn" id="dlBtn" type="button" title="Downloads" aria-label="Downloads" hidden><svg class="i"><use href="#i-download"/></svg><span class="cc-badge cc-badge--count" id="dlBadge" hidden></span></button>
         <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
-        <form method="post" action="{{ url_for('auth.logout') }}">
+        <form class="signout" method="post" action="{{ url_for('auth.logout') }}">
             <button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out"><svg class="i"><use href="#i-logout"/></svg></button>
         </form>
     </header>
@@ -39,6 +46,11 @@
             </nav>
             <div class="grow"></div>
             <div class="storage" id="storage"></div>
+            {# On phones the top bar has no room for these, so the drawer has them. #}
+            <nav class="nav side-actions" aria-label="Theme and sign-out">
+                <button class="cc-shell__row" type="button" data-switch-theme><svg class="i"><use href="#i-sun"/></svg><span>Switch theme</span></button>
+                <form method="post" action="{{ url_for('auth.logout') }}"><button class="cc-shell__row" type="submit"><svg class="i"><use href="#i-logout"/></svg><span>Sign out</span></button></form>
+            </nav>
         </aside>
 
         <main class="cc-shell__main" id="main">
@@ -127,6 +139,39 @@
             <button class="cc-btn cc-btn--primary" id="tagApply" type="submit"><span>Done</span></button>
         </div>
     </form>
+</dialog>
+
+<dialog class="panel" id="dlPanel" aria-labelledby="dlTitle">
+    <header class="cc-card-header">
+        <svg><use href="#i-link"/></svg><h4 id="dlTitle">Upload from link</h4>
+        <div class="cc-card-header__end"><button class="icon-btn" type="button" data-close title="Close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+    </header>
+    <div class="panel__body">
+        <form id="dlForm" novalidate>
+            <div class="field">
+                <label for="dlUrl">Link</label>
+                <input class="cc-input" id="dlUrl" type="url" placeholder="https://example.com/file.iso" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="field">
+                <label for="dlFolder">Save to</label>
+                <select class="cc-input" id="dlFolder"></select>
+                <span class="cc-field__hint">The server does the downloading, so you can close this tab.</span>
+            </div>
+            <div class="field">
+                <label for="dlTags">Tags</label>
+                <input class="cc-input" id="dlTags" type="text" placeholder="optional, e.g. iso linux" autocomplete="off" spellcheck="false">
+            </div>
+            <button class="cc-btn cc-btn--primary cc-btn--block" id="dlStart" type="submit"><svg class="i"><use href="#i-download"/></svg><span>Start download</span></button>
+        </form>
+        <section aria-labelledby="dlListTitle">
+            <div class="panel__head">
+                <div class="cc-eyebrow" id="dlListTitle">Downloads</div>
+                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="dlClear" type="button" hidden><span>Clear finished</span></button>
+            </div>
+            <p class="panel__none" id="dlNone">Nothing downloaded yet.</p>
+            <div class="dls" id="dlList"></div>
+        </section>
+    </div>
 </dialog>
 
 <dialog class="cc-settings-card dialog" id="moveDialog" aria-labelledby="moveTitle">

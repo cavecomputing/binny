@@ -1,4 +1,4 @@
-/** Calls to the JSON API under /api. A failed call shows the server's message and throws it. */
+/** Calls to the JSON API under /api. A failed call shows the server's message (unless it's quiet) and throws it. */
 import { showError } from './ui.js';
 
 function failure(status, data) {
@@ -8,7 +8,7 @@ function failure(status, data) {
     return error;
 }
 
-async function request(method, url, body) {
+async function request(method, url, body, quiet = false) {
     try {
         const response = await fetch(url, {
             method,
@@ -19,13 +19,16 @@ async function request(method, url, body) {
         if (!response.ok) throw failure(response.status, data);
         return data;
     } catch (error) {
-        showError(error.message);
+        if (!quiet) showError(error.message);
         throw error;
     }
 }
 
-/** GET url with query parameters, an object or a list of [name, value] pairs. */
-export const get = (url, params = {}) => request('GET', `${url}?${new URLSearchParams(params)}`);
+/**
+ * GET url with query parameters, an object or a list of [name, value] pairs. quiet keeps a failure
+ * off the screen, for polling, where the next try comes soon anyway.
+ */
+export const get = (url, params = {}, { quiet = false } = {}) => request('GET', `${url}?${new URLSearchParams(params)}`, undefined, quiet);
 
 export const post = (url, body) => request('POST', url, body);
 

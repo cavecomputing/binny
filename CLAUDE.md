@@ -15,7 +15,8 @@ still being made. Update them as they settle rather than working around them.
 - **Navigation has three parts, each with one job:** the sidebar folder tree for moving sideways
   (it opens only the branch you are in; other branches open by their arrow), the breadcrumb for
   the exact path and moving up, and the file list for moving down. The sidebar collapses (button
-  or `[`, remembered per device) so breadcrumb and list can stand alone; on phones it is a drawer.
+  or `[`, remembered per device) so breadcrumb and list can stand alone; on phones it is a drawer,
+  which also holds the theme switch and sign-out, as the top bar has no room for them there.
 - **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
   upload (button and drag-and-drop, many files at once), download (single files; folders and
   multi-selections as a zip).
@@ -41,7 +42,9 @@ still being made. Update them as they settle rather than working around them.
   it there, with progress shown in the UI. The download runs server-side, so it keeps going when the
   browser tab closes. Plain HTTP(S) only, with the standard library (no yt-dlp-style site
   support); three run at once and the rest wait their turn. The list lives in memory, so a restart
-  empties it and cuts running downloads short.
+  empties it and cuts running downloads short. In the page it is "Upload from link" under the "+"
+  button's arrow (or L), into the folder on screen unless another is picked; a downloads button
+  with a count of those running appears beside it while the list has any.
 - **No sharing.** No public links, no second user, no permissions model. Don't add one.
 
 ## Git workflow
@@ -150,7 +153,7 @@ neighbour.
 | `binny/downloader.py` | Upload from link: the download jobs, kept in memory, each run in a thread of its own. |
 | `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads` (start, list, cancel, clear the finished). `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
+| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `sidebar.js` (folder tree), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | Dockerfile and `compose.yml`, as in imgy. |
@@ -166,8 +169,9 @@ you on its own under it:
 
 - Native ES modules only, `import`/`export` with relative paths. No bundler, no framework, no
   globals except what `main.js` deliberately wires up.
-- Call the server through `api.js`, which throws on errors and shows them to the user. The toast is
-  a popover so it shows above an open dialog; a dialog whose action fails stays open (`ask()`).
+- Call the server through `api.js`, which throws on errors and shows them to the user (`quiet` for
+  polling, which tries again soon anyway). The toast is a popover so it shows above an open dialog;
+  a dialog whose action fails stays open (`ask()`).
 - Modules that bind listeners export an `initX()`; `main.js` calls them in order.
 - A module that changes files calls `filesChanged()` (`state.js`); the explorer and the sidebar
   reload on that event. Don't reach into another module to redraw it.

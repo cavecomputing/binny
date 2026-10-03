@@ -1,4 +1,5 @@
 /** Entry point: wires up each module. */
+import { initDownloads } from './downloads.js';
 import { initDrop } from './drop.js';
 import { initExplorer } from './explorer.js';
 import { initMove } from './move.js';
@@ -21,6 +22,7 @@ initExplorer();
 initTrash();
 initTagger();
 initUpload();
+initDownloads();
 initMove();
 initDrop();
 initShortcuts();
