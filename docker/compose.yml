@@ -9,7 +9,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: binny
     ports:
-      - "127.0.0.1:5002:5002"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ../data:/data
     restart: unless-stopped

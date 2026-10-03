@@ -15,17 +15,17 @@ COPY app.py .
 COPY binny/ binny/
 COPY docker/entrypoint.sh .
 
-EXPOSE 5002
+EXPOSE 5000
 
 ENV BINNY_DATA_DIR=/data
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5002/login')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/login')" || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 # One worker process, with threads: the downloads, and the lock that hands out free names, live in
 # its memory. A gthread worker isn't timed out by a long upload or download. No control socket:
 # nothing uses it, and it would want a home folder the app user doesn't have.
-CMD ["gunicorn", "--bind", "0.0.0.0:5002", "--workers", "1", "--worker-class", "gthread", "--threads", "16", "--timeout", "120", "--no-control-socket", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--worker-class", "gthread", "--threads", "16", "--timeout", "120", "--no-control-socket", "app:app"]

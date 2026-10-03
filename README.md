@@ -43,7 +43,7 @@ uv sync
 BINNY_PASSWORD=pick-one uv run app.py
 ```
 
-Then open <http://localhost:5002> and sign in with that password.
+Then open <http://localhost:5000> and sign in with that password.
 
 To run Binny with Docker instead, put the password in `docker/.env`:
 
@@ -52,9 +52,9 @@ echo 'BINNY_PASSWORD=pick-one' > docker/.env
 docker compose -f docker/compose.yml up --build -d
 ```
 
-The container listens on `127.0.0.1:5002`, keeps everything in `data/`, and runs as UID/GID 1000
+The container listens on `127.0.0.1:5000`, keeps everything in `data/`, and runs as UID/GID 1000
 unless `PUID` and `PGID` (also in `docker/.env`) say otherwise. Binny has no HTTPS of its own: put
-Caddy in front of it (`reverse_proxy 127.0.0.1:5002`) and keep it on your LAN or tailnet.
+Caddy in front of it (`reverse_proxy 127.0.0.1:5000`) and keep it on your LAN or tailnet.
 
 ## Updating
 
@@ -87,7 +87,7 @@ Caddy, let it listen on every address:
 BINNY_PASSWORD=pick-one uv run app.py --host 0.0.0.0
 ```
 
-Then open `http://<computer's LAN address>:5002` on a phone on the same network. Only do this on a
+Then open `http://<computer's LAN address>:5000` on a phone on the same network. Only do this on a
 network you trust: over plain HTTP, the password crosses it unencrypted.
 
 ## Your data
