@@ -90,9 +90,9 @@ const ROW_ACTIONS = {
 
 const rowEntries = (item) => [
     { act: 'tags', label: 'Tags', iconName: 'tag', key: 'T' },
-    { act: 'rename', label: 'Rename', iconName: 'rename', key: 'F2' },
+    { act: 'rename', label: 'Rename', iconName: 'rename', key: 'R' },
     { act: 'move', label: 'Move to…', iconName: 'move', key: 'M' },
-    { act: 'download', label: item.is_dir ? 'Download zip' : 'Download', iconName: 'download' },
+    { act: 'download', label: item.is_dir ? 'Download zip' : 'Download', iconName: 'download', key: 'S' },
     { act: 'trash', label: 'Move to trash', iconName: 'trash', key: 'Del', danger: true },
 ];
 
@@ -243,6 +243,8 @@ export function renameSelected() {
     if (state.selected.size === 1) rename(itemAt([...state.selected][0]));
 }
 
+export const downloadSelected = () => state.selected.size && download([...state.selected]);
+
 export const moveSelected = () => openMove([...state.selected]);
 
 export const trashSelected = () => trashItems([...state.selected]);
@@ -318,7 +320,7 @@ export function initExplorer() {
     $('selTag').addEventListener('click', () => openTagger([...state.selected]));
     $('selRename').addEventListener('click', renameSelected);
     $('selMove').addEventListener('click', moveSelected);
-    $('selDownload').addEventListener('click', () => download([...state.selected]));
+    $('selDownload').addEventListener('click', downloadSelected);
     $('selTrash').addEventListener('click', trashSelected);
     $('selClear').addEventListener('click', clearSelection);
     load();
