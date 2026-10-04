@@ -6,7 +6,7 @@ import * as api from './api.js';
 import { openMove } from './move.js';
 import { ancestors, byName, currentFolder, currentSearch, fileUrl, folderHash, isTrash, nameOf, parentOf, searchHash } from './paths.js';
 import { menuButton, openMenu } from './rowmenu.js';
-import { clickSelect, markRows } from './selection.js';
+import { clickSelect, keySelect, markRows, revealRow } from './selection.js';
 import { filesChanged, state } from './state.js';
 import { openTagger } from './tagger.js';
 import { formatQuery, parseQuery } from './tags.js';
@@ -15,7 +15,8 @@ import { $, ask, esc, formatDate, formatSize, icon, plural } from './ui.js';
 
 const SORTS = { name: 'Name', size: 'Size', mtime: 'Modified' };
 let sort = savedSort();
-let anchor = null; // the row a shift-click selects from
+let anchor = null; // the row a shift-click or shift-arrow selects from
+let cursor = null; // the row the keyboard moves from: the last one clicked or moved to
 let latest = 0;    // only the newest listing gets drawn
 
 function savedSort() {
@@ -52,7 +53,7 @@ export async function load() {
     if (request !== latest) return;
     if (folder !== state.folder || search !== state.search) {
         state.selected.clear();
-        anchor = null;
+        anchor = cursor = null;
     }
     state.folder = folder;
     state.search = search;
@@ -246,6 +247,27 @@ export const moveSelected = () => openMove([...state.selected]);
 
 export const trashSelected = () => trashItems([...state.selected]);
 
+/** Move the selection down (or up) by move rows, or to 'first' or 'last'; extend adds the rows between. */
+export function moveCursor(move, extend) {
+    ({ cursor, anchor } = keySelect(state.selected, sorted(state.items).map((item) => item.path), { cursor, anchor }, move, extend));
+    renderSelection();
+    revealRow($('list'), cursor, (row) => row.dataset.path);
+}
+
+/** Open the one selected item: a folder is gone into, a file opens in a new tab. */
+export function openSelected() {
+    const item = state.selected.size === 1 && itemAt([...state.selected][0]);
+    if (!item) return;
+    if (item.is_dir) location.hash = folderHash(item.path);
+    else window.open(fileUrl(item.path), '_blank', 'noopener');
+}
+
+/** One folder up, or from a search back to the folder it started in. */
+export function goUp() {
+    if (state.search !== null) location.hash = folderHash(state.folder);
+    else if (state.folder) location.hash = folderHash(parentOf(state.folder));
+}
+
 export function selectAll() {
     for (const item of state.items) state.selected.add(item.path);
     renderSelection();
@@ -279,6 +301,7 @@ export function initExplorer() {
         }
         if (event.target.closest('a')) return; // links open or download by themselves
         anchor = clickSelect(state.selected, sorted(state.items).map((item) => item.path), tr.dataset.path, event, anchor);
+        cursor = tr.dataset.path;
         renderSelection();
     });
     list.addEventListener('dblclick', (event) => {

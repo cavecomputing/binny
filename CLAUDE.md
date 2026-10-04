@@ -21,7 +21,10 @@ still being made. Update them as they settle rather than working around them.
   box is a dock along the bottom (its suggestions open upward) so the top bar can keep the wordmark.
 - **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
   upload (button and drag-and-drop, many files at once), download (single files; folders and
-  multi-selections as a zip).
+  multi-selections as a zip). The rows move by keyboard, with the arrow keys or vim's: Up/Down or
+  `k`/`j` select the previous or next row (Shift extends), `gg`/`G` or Home/End jump to the ends,
+  Right or Enter opens the selected item and Left or `h` goes up a folder, in the trash too except
+  opening and going up. `l` stays "Upload from link", so it isn't vim's right.
 - **Tags:** any file or folder can carry tags, and the search box finds things anywhere by tag or
   name. It reuses imgy's ideas rather than inventing new ones: the expression syntax below, tag
   suggestions with counts, tab completion, and one tag editor for an item or a whole selection that
@@ -155,7 +158,7 @@ neighbour.
 | `binny/downloader.py` | Upload from link: the download jobs, kept in memory, each run in a thread of its own. |
 | `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads` (start, list, cancel, clear the finished). `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `rowmenu.js` (the "…" menu at the end of each row, in the file list and the trash: a row's actions behind one button so a long name keeps its room), `sidebar.js` (folder tree, and the handle that sets its width), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
+| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click and keyboard selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `rowmenu.js` (the "…" menu at the end of each row, in the file list and the trash: a row's actions behind one button so a long name keeps its room), `sidebar.js` (folder tree, and the handle that sets its width), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
 | `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | `Dockerfile`, `compose.yml` and `entrypoint.sh`, as in imgy: gunicorn with one gthread worker on port 5000, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |

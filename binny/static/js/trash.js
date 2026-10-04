@@ -2,13 +2,14 @@
 import * as api from './api.js';
 import { isTrash, nameOf, parentOf } from './paths.js';
 import { menuButton, openMenu } from './rowmenu.js';
-import { clickSelect, markRows } from './selection.js';
+import { clickSelect, keySelect, markRows, revealRow } from './selection.js';
 import { filesChanged, state } from './state.js';
 import { $, ask, esc, formatDate, formatSize, icon, plural, toast } from './ui.js';
 
 let items = [];             // what /api/trash lists
 const selected = new Set(); // names in the trash
 let anchor = null;
+let cursor = null;
 
 const itemNamed = (name) => items.find((item) => item.name === name);
 
@@ -126,6 +127,12 @@ function renderSelection() {
     $('trashSelCount').textContent = `${selected.size.toLocaleString()} selected`;
 }
 
+export function moveTrashCursor(move, extend) {
+    ({ cursor, anchor } = keySelect(selected, items.map((item) => item.name), { cursor, anchor }, move, extend));
+    renderSelection();
+    revealRow($('trashList'), cursor, (row) => row.dataset.name);
+}
+
 export function selectAllTrash() {
     for (const item of items) selected.add(item.name);
     renderSelection();
@@ -156,6 +163,7 @@ export function initTrash() {
             return openMenu(event.target.closest('[data-act]'), ROW_ENTRIES, (act) => (act === 'restore' ? restore : deleteForever)([name]));
         }
         anchor = clickSelect(selected, items.map((item) => item.name), tr.dataset.name, event, anchor);
+        cursor = tr.dataset.name;
         renderSelection();
     });
     list.addEventListener('change', (event) => {
