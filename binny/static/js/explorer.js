@@ -115,9 +115,8 @@ function row(item) {
         <td class="chk"><input type="checkbox" aria-label="Select ${esc(item.name)}"></td>
         <td><div class="name">
             <span class="ficon ${item.kind}">${icon(item.kind)}</span>
-            <div class="name-text"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a>${where}<div class="meta">${sizeLabel(item)} · ${date}${tagCount(item)}</div></div>
+            <div class="name-text"><div class="name-line"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a>${tagCount(item)}</div>${where}<div class="meta">${sizeLabel(item)} · ${date}</div></div>
         </div></td>
-        <td class="col-tags">${tagCount(item)}</td>
         <td class="num r col-size">${sizeLabel(item)}</td>
         <td class="num col-mod" title="${esc(new Date(item.mtime * 1000).toLocaleString())}">${date}</td>
         <td><div class="acts">${menuButton}</div></td>
@@ -168,10 +167,10 @@ function render() {
         ? `<div class="empty">${icon('search')}<p>Nothing matches.</p></div>`
         : `<div class="empty">${icon('folder')}<p>This folder is empty.</p><p>Drop files here, or upload them with <b>+</b>.</p></div>`;
     $('list').innerHTML = items.length
-        ? `<table class="files${items.some((item) => item.tags.length) ? '' : ' files--no-tags'}">
+        ? `<table class="files">
             <thead><tr>
                 <th class="chk"><input type="checkbox" aria-label="Select all"></th>
-                ${heading('name')}<th class="col-tags">Tags</th>${heading('size', 'r col-size')}${heading('mtime', 'col-mod')}<th></th>
+                ${heading('name')}${heading('size', 'r col-size')}${heading('mtime', 'col-mod')}<th></th>
             </tr></thead>
             <tbody>${items.map(row).join('')}</tbody>
         </table>`

@@ -73,7 +73,7 @@ upload from link still in progress, so let those finish first.
 
 Binny fits a phone: the folder tree and tags move into a drawer that covers the screen (an X closes
 it), along with the theme switch and sign-out, search moves to a bar along the bottom, within
-thumb's reach, and each file's size, date and number of tags sit under its name.
+thumb's reach, and each file's size and date sit under its name, beside its number of tags.
 
 <p align="center">
   <img src="assets/phone-folder.png" alt="A folder on a phone" width="30%">
