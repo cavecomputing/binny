@@ -151,6 +151,11 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .menu b { display: block; font-family: var(--font-mono); font-size: 13px; }
 .menu small { display: block; color: var(--fg-muted); font-size: 12px; }
 .menu .kbd { margin-left: auto; }
+/* A row's "…" menu: fixed, so the list's scrolling can't clip it; rowmenu.js sets left and top. */
+.menu--row { position: fixed; right: auto; min-width: 200px; padding: 4px; }
+.menu--row button { gap: var(--app-space-3); padding: var(--app-space-2) var(--app-space-3); font-family: var(--font-mono); font-size: 13px; }
+.menu--row button > .i { width: 16px; height: 16px; color: var(--fg-muted); }
+.menu--row button.danger, .menu--row button.danger > .i { color: var(--accent-warm); }
 .grow { flex: 1; }
 .body { flex: 1; min-height: 0; display: flex; }
 
@@ -274,9 +279,8 @@ a.cc-tag:hover, button.cc-tag:hover { border-color: var(--accent-text); color: v
 .num .sub, .meta .sub { color: var(--fg-subtle); }
 .r { text-align: right !important; }
 .acts { display: flex; justify-content: flex-end; gap: 2px; opacity: 0; transition: opacity 120ms ease; }
-tr.row:hover .acts, tr.row:focus-within .acts, .acts--shown { opacity: 1; }
+tr.row:hover .acts, tr.row:focus-within .acts, .acts:has([aria-expanded="true"]) { opacity: 1; }
 .acts .icon-btn { width: 28px; height: 28px; }
-.acts .del:hover { color: var(--accent-warm); }
 @media (hover: none) {
     .acts { opacity: 1; }
 }
@@ -413,7 +417,6 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .meta { display: block; }
     .meta-tags { display: flex; }
     .acts { opacity: 1; }
-    .acts .opt { display: none; }
     .acts .icon-btn { width: 36px; height: 36px; }
     .uploads { left: var(--app-space-4); right: var(--app-space-4); bottom: calc(var(--dock) + var(--app-space-4)); width: auto; }
     .toast { inset-block-end: calc(var(--dock) + var(--app-space-5) + env(safe-area-inset-bottom)); }

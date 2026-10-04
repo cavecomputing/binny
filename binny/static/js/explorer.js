@@ -5,6 +5,7 @@
 import * as api from './api.js';
 import { openMove } from './move.js';
 import { ancestors, byName, currentFolder, currentSearch, fileUrl, folderHash, isTrash, nameOf, parentOf, searchHash } from './paths.js';
+import { menuButton, openMenu } from './rowmenu.js';
 import { clickSelect, markRows } from './selection.js';
 import { filesChanged, state } from './state.js';
 import { openTagger } from './tagger.js';
@@ -77,6 +78,23 @@ function splitName(item) {
 
 const itemAt = (path) => state.items.find((item) => item.path === path);
 
+/** What a row's "…" menu does, by the action each entry names. */
+const ROW_ACTIONS = {
+    tags: (item) => openTagger([item.path]),
+    rename,
+    move: (item) => openMove([item.path]),
+    download: (item) => download([item.path]),
+    trash: (item) => trashItems([item.path]),
+};
+
+const rowEntries = (item) => [
+    { act: 'tags', label: 'Tags', iconName: 'tag', key: 'T' },
+    { act: 'rename', label: 'Rename', iconName: 'rename', key: 'F2' },
+    { act: 'move', label: 'Move to…', iconName: 'move', key: 'M' },
+    { act: 'download', label: item.is_dir ? 'Download zip' : 'Download', iconName: 'download' },
+    { act: 'trash', label: 'Move to trash', iconName: 'trash', key: 'Del', danger: true },
+];
+
 function sizeLabel(item) {
     if (!item.is_dir) return formatSize(item.size);
     return item.items ? `<span class="sub">${plural(item.items, 'item')} · </span>${formatSize(item.size)}` : '<span class="sub">empty</span>';
@@ -101,13 +119,7 @@ function row(item) {
         <td class="col-tags">${tagChips(item, '')}</td>
         <td class="num r col-size">${sizeLabel(item)}</td>
         <td class="num col-mod" title="${esc(new Date(item.mtime * 1000).toLocaleString())}">${date}</td>
-        <td><div class="acts">
-            <button class="icon-btn opt" type="button" data-act="tags" title="Tags (T)" aria-label="Tags">${icon('tag')}</button>
-            <button class="icon-btn opt" type="button" data-act="rename" title="Rename (F2)" aria-label="Rename">${icon('rename')}</button>
-            <button class="icon-btn opt" type="button" data-act="move" title="Move (M)" aria-label="Move">${icon('move')}</button>
-            <a class="icon-btn" href="${esc(fileUrl(item.path, true))}" download title="Download${item.is_dir ? ' as zip' : ''}" aria-label="Download">${icon('download')}</a>
-            <button class="icon-btn del" type="button" data-act="trash" title="Move to trash (Del)" aria-label="Move to trash">${icon('trash')}</button>
-        </div></td>
+        <td><div class="acts">${menuButton}</div></td>
     </tr>`;
 }
 
@@ -261,10 +273,10 @@ export function initExplorer() {
             return;
         }
         const action = event.target.closest('[data-act]')?.dataset.act;
-        if (action === 'tags') return openTagger([tr.dataset.path]);
-        if (action === 'rename') return rename(itemAt(tr.dataset.path));
-        if (action === 'move') return openMove([tr.dataset.path]);
-        if (action === 'trash') return trashItems([tr.dataset.path]);
+        if (action === 'menu') {
+            const item = itemAt(tr.dataset.path);
+            return openMenu(event.target.closest('[data-act]'), rowEntries(item), (act) => ROW_ACTIONS[act](item));
+        }
         if (event.target.closest('a')) return; // links open or download by themselves
         anchor = clickSelect(state.selected, sorted(state.items).map((item) => item.path), tr.dataset.path, event, anchor);
         renderSelection();

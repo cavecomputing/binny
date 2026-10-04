@@ -1,6 +1,7 @@
 /** The trash: moving things into it (with undo), and the trash view, where they're restored or deleted for good. */
 import * as api from './api.js';
 import { isTrash, nameOf, parentOf } from './paths.js';
+import { menuButton, openMenu } from './rowmenu.js';
 import { clickSelect, markRows } from './selection.js';
 import { filesChanged, state } from './state.js';
 import { $, ask, esc, formatDate, formatSize, icon, plural, toast } from './ui.js';
@@ -10,6 +11,11 @@ const selected = new Set(); // names in the trash
 let anchor = null;
 
 const itemNamed = (name) => items.find((item) => item.name === name);
+
+const ROW_ENTRIES = [
+    { act: 'restore', label: 'Restore', iconName: 'restore' },
+    { act: 'delete', label: 'Delete forever', iconName: 'trash', danger: true },
+];
 
 /** Move paths to the trash, with an Undo in the toast. */
 export async function trashItems(paths) {
@@ -93,10 +99,7 @@ function row(item) {
         <td class="num r col-size">${formatSize(item.size)}</td>
         <td class="col-mod"><span class="path">${esc(where)}</span></td>
         <td class="num col-mod" title="${esc(new Date(item.trashed_at * 1000).toLocaleString())}">${date}</td>
-        <td><div class="acts acts--shown">
-            <button class="cc-btn cc-btn--ghost cc-btn--sm" type="button" data-act="restore">${icon('restore')}<span>Restore</span></button>
-            <button class="icon-btn del" type="button" data-act="delete" title="Delete forever" aria-label="Delete forever">${icon('trash')}</button>
-        </div></td>
+        <td><div class="acts">${menuButton}</div></td>
     </tr>`;
 }
 
@@ -148,8 +151,10 @@ export function initTrash() {
             return;
         }
         const action = event.target.closest('[data-act]')?.dataset.act;
-        if (action === 'restore') return restore([tr.dataset.name]);
-        if (action === 'delete') return deleteForever([tr.dataset.name]);
+        if (action === 'menu') {
+            const name = tr.dataset.name;
+            return openMenu(event.target.closest('[data-act]'), ROW_ENTRIES, (act) => (act === 'restore' ? restore : deleteForever)([name]));
+        }
         anchor = clickSelect(selected, items.map((item) => item.name), tr.dataset.name, event, anchor);
         renderSelection();
     });
