@@ -419,6 +419,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .search .icon-btn { width: 32px; height: 32px; }
     .suggest { top: auto; bottom: calc(100% + 6px); }
     .subbar, .selbar { padding-inline: var(--app-space-4); }
+    /* A roomy checkbox cell, so a tap near it toggles the row instead of missing. */
+    .chk { width: 52px; min-width: 52px; }
+    .chk input { width: 22px; height: 22px; }
     .col-size, .col-mod, .col-tags { display: none; }
     .files td:has(> .name) { width: 100%; }
     .meta { display: block; }

@@ -2,7 +2,7 @@
 
 /**
  * Apply a click on the row with key to selected: a plain click selects just that row (or clears it
- * if it was the only one), Ctrl/Cmd-click or its checkbox toggles it, Shift-click adds the range
+ * if it was the only one), Ctrl/Cmd-click or its checkbox cell toggles it, Shift-click adds the range
  * from anchor in order (the keys as shown). Returns the next anchor.
  */
 export function clickSelect(selected, order, key, event, anchor) {
@@ -11,7 +11,9 @@ export function clickSelect(selected, order, key, event, anchor) {
         for (const each of order.slice(from, to + 1)) selected.add(each);
         return anchor;
     }
-    if (event.ctrlKey || event.metaKey || event.target.type === 'checkbox') {
+    // The checkbox's whole cell counts as the checkbox, and on a touch screen, once something is selected, a tap toggles a row
+    // (a gallery's selection mode) rather than starting over: a near miss shouldn't throw the selection away.
+    if (event.ctrlKey || event.metaKey || event.target.closest('td.chk') || (selected.size && matchMedia('(pointer: coarse)').matches)) {
         if (!selected.delete(key)) selected.add(key);
     } else {
         const onlyThis = selected.size === 1 && selected.has(key);
