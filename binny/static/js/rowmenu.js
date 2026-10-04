@@ -2,6 +2,7 @@
 import { $, esc, icon } from './ui.js';
 
 let opener = null; // the "…" button the menu hangs from
+let openedTop = 0; // where that button was when the menu opened
 
 /** The button that opens a row's menu. */
 export const menuButton = `<button class="icon-btn" type="button" data-act="menu" title="Actions" aria-label="Actions" aria-haspopup="menu" aria-expanded="false">${icon('more')}</button>`;
@@ -33,10 +34,11 @@ export function openMenu(button, entries, choose) {
     button.setAttribute('aria-expanded', 'true');
     // Under the button and against its right edge, or above it when the window ends first.
     const box = button.getBoundingClientRect();
+    openedTop = box.top;
     const { width, height } = menu.getBoundingClientRect();
     menu.style.left = `${Math.max(8, Math.min(box.right - width, innerWidth - width - 8))}px`;
     menu.style.top = `${box.bottom + height + 8 > innerHeight ? Math.max(8, box.top - height - 4) : box.bottom + 4}px`;
-    menu.firstElementChild.focus();
+    menu.firstElementChild.focus({ preventScroll: true });
 }
 
 export function initRowMenu() {
@@ -57,7 +59,8 @@ export function initRowMenu() {
         }
     });
     document.addEventListener('click', (event) => !event.target.closest('#rowMenu, [data-act=menu]') && closeMenu());
-    document.addEventListener('scroll', closeMenu, true);
+    // A scroll that moves the button leaves the menu behind, so it closes; one that doesn't (a late event from focusing) leaves it open.
+    document.addEventListener('scroll', () => opener?.getBoundingClientRect().top !== openedTop && closeMenu(), true);
     window.addEventListener('resize', closeMenu);
     window.addEventListener('files-changed', closeMenu);
     window.addEventListener('hashchange', closeMenu);
