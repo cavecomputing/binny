@@ -6,8 +6,9 @@
     <title>{% block title %}Binny{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    {# Dark unless this device chose light. Runs before the stylesheets so a light device never flashes dark. #}
-    <script>try { if (localStorage.getItem('binny-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+    {# Dark unless this device chose light, and the sidebar at the width this device chose. Runs before the stylesheets so neither flashes. #}
+    <script>try { if (localStorage.getItem('binny-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+    try { var side = parseInt(localStorage.getItem('binny-sidebar-width'), 10); if (side) document.documentElement.style.setProperty('--side-width', side + 'px'); } catch (e) {}</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cavecomputing.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}

@@ -183,7 +183,12 @@ svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 mark { background: none; color: var(--accent-text); font-weight: 700; }
 
 /* ---------- sidebar: folder tree and disk usage ---------- */
-.side { width: 280px; overflow-y: auto; gap: var(--app-space-5); }
+.side { width: var(--side-width, 280px); max-width: 50vw; overflow-y: auto; gap: var(--app-space-5); }
+/* The handle on the sidebar's edge: 6px to grab, a line that shows when it's hovered, focused or dragged. */
+.side-resize { position: relative; z-index: 5; flex: none; width: 6px; margin-inline: -3px; cursor: col-resize; touch-action: none; }
+.side-resize::after { content: ""; position: absolute; inset: 0 2px; background: var(--accent-text); opacity: 0; transition: opacity 120ms ease; }
+.side-resize:hover::after, .side-resize:focus-visible::after, .side-resize.dragging::after { opacity: 1; }
+.side-resize:focus-visible { outline: 0; }
 .side .cc-eyebrow { color: var(--fg-muted); border: 0; padding: 0 var(--app-space-3); margin: 0 0 var(--app-space-1); }
 .nav { display: flex; flex-direction: column; gap: 2px; }
 .nav .cc-shell__row { display: flex; align-items: center; gap: var(--app-space-3); min-width: 0; text-decoration: none; transition: background 120ms ease, color 120ms ease; }
@@ -392,8 +397,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 @media (max-width: 760px) {
     :root { --dock: 60px; }
     body { padding: max(var(--shell-gap), env(safe-area-inset-top)) max(var(--shell-gap), env(safe-area-inset-right)) max(var(--shell-gap), env(safe-area-inset-bottom)) max(var(--shell-gap), env(safe-area-inset-left)); }
-    .side { display: none; position: absolute; inset: 0; z-index: 35; width: auto; border: 0; background: var(--bg-surface); border-radius: var(--radius-lg); } /* covers the whole app, and the X closes it */
+    .side { display: none; position: absolute; inset: 0; z-index: 35; width: auto; max-width: none; border: 0; background: var(--bg-surface); border-radius: var(--radius-lg); } /* covers the whole app, and the X closes it */
     .side.open { display: flex; }
+    .side-resize { display: none; }
     #sideBtn, .side-close { display: inline-grid; }
     .side-close { align-self: flex-end; flex: none; width: 44px; height: 44px; margin: calc(-1 * var(--app-space-2)) calc(-1 * var(--app-space-2)) calc(-1 * var(--app-space-4)); }
     .topbar { gap: var(--app-space-2); height: 52px; padding-inline: var(--app-space-1) var(--app-space-3); }

@@ -1,11 +1,13 @@
 /**
  * The sidebar: the folder tree, open along the folder on screen (other branches open by their arrow),
- * and the disk usage. On phones it is a drawer.
+ * and the disk usage. On phones it is a drawer; beside the list it is always shown, and its width
+ * is dragged (or set by arrow keys) at the handle on its edge and remembered per device.
  */
 import * as api from './api.js';
 import { ancestors, byName, currentFolder, currentSearch, folderHash, isTrash } from './paths.js';
 import { $, esc, formatSize, icon } from './ui.js';
 
+const SIDE_WIDTH = { min: 200, max: 520, normal: 280, step: 20 };
 const expanded = new Set(); // branches opened by their arrow
 const closed = new Set();   // branches along the folder on screen, closed by their arrow
 let shownFolder = null;
@@ -73,7 +75,39 @@ function setDrawer(open) {
     $('side').classList.toggle('open', open);
 }
 
+/** Set the sidebar's width in pixels, kept within its limits, and remember it. */
+function setSideWidth(width) {
+    const clamped = Math.round(Math.min(SIDE_WIDTH.max, Math.max(SIDE_WIDTH.min, width)));
+    document.documentElement.style.setProperty('--side-width', `${clamped}px`);
+    $('sideResize').setAttribute('aria-valuenow', clamped);
+    try { localStorage.setItem('binny-sidebar-width', clamped); } catch { /* lasts this visit */ }
+}
+
+function initResize() {
+    const handle = $('sideResize');
+    const width = () => $('side').getBoundingClientRect().width; // what the CSS made of the saved width
+    handle.setAttribute('aria-valuenow', Math.round(width()));
+    handle.addEventListener('pointerdown', (event) => {
+        event.preventDefault(); // no text selection while dragging
+        handle.setPointerCapture(event.pointerId);
+        handle.classList.add('dragging');
+    });
+    handle.addEventListener('pointermove', (event) => {
+        if (handle.hasPointerCapture(event.pointerId)) setSideWidth(event.clientX - $('side').getBoundingClientRect().left);
+    });
+    handle.addEventListener('pointerup', () => handle.classList.remove('dragging'));
+    handle.addEventListener('pointercancel', () => handle.classList.remove('dragging'));
+    handle.addEventListener('dblclick', () => setSideWidth(SIDE_WIDTH.normal));
+    handle.addEventListener('keydown', (event) => {
+        const next = { ArrowLeft: width() - SIDE_WIDTH.step, ArrowRight: width() + SIDE_WIDTH.step, Home: SIDE_WIDTH.min, End: SIDE_WIDTH.max }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        setSideWidth(next);
+    });
+}
+
 export function initSidebar() {
+    initResize();
     $('sideBtn').addEventListener('click', () => setDrawer(!$('side').classList.contains('open')));
     $('sideClose').addEventListener('click', () => setDrawer(false));
     // A link closes the drawer even when it leads where the page already is, which changes no hash.
