@@ -101,11 +101,6 @@ function sizeLabel(item) {
     return item.items ? `<span class="sub">${plural(item.items, 'item')} · </span>${formatSize(item.size)}` : '<span class="sub">empty</span>';
 }
 
-/** How many tags an item has, a button that opens its tag editor; hovering lists them. */
-const tagCount = (item) => (item.tags.length
-    ? `<button class="tag-count" type="button" data-act="tags" title="${esc(item.tags.join(', '))}" aria-label="${plural(item.tags.length, 'tag')}, edit">${icon('tag')}${item.tags.length}</button>`
-    : '');
-
 function row(item) {
     const [stem, ext] = splitName(item);
     const link = item.is_dir ? `href="${esc(folderHash(item.path))}"` : `href="${esc(fileUrl(item.path))}" target="_blank" rel="noopener"`;
@@ -115,7 +110,7 @@ function row(item) {
         <td class="chk"><input type="checkbox" aria-label="Select ${esc(item.name)}"></td>
         <td><div class="name">
             <span class="ficon ${item.kind}">${icon(item.kind)}</span>
-            <div class="name-text"><div class="name-line"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a>${tagCount(item)}</div>${where}<div class="meta">${sizeLabel(item)} · ${date}</div></div>
+            <div class="name-text"><a class="fname" ${link}>${esc(stem)}<span class="ext">${esc(ext)}</span></a>${where}<div class="meta">${sizeLabel(item)} · ${date}</div></div>
         </div></td>
         <td class="num r col-size">${sizeLabel(item)}</td>
         <td class="num col-mod" title="${esc(new Date(item.mtime * 1000).toLocaleString())}">${date}</td>
@@ -296,7 +291,6 @@ export function initExplorer() {
             return;
         }
         const action = event.target.closest('[data-act]')?.dataset.act;
-        if (action === 'tags') return openTagger([tr.dataset.path]);
         if (action === 'menu') {
             const item = itemAt(tr.dataset.path);
             return openMenu(event.target.closest('[data-act]'), rowEntries(item), (act) => ROW_ACTIONS[act](item));

@@ -14,7 +14,7 @@ Your files stay ordinary files in a folder that any file manager can open, and B
 the tags and what's in the trash.
 
 <p align="center">
-  <img src="assets/explorer.png" alt="A folder in Binny, each file with how many tags it has" width="49%">
+  <img src="assets/explorer.png" alt="A folder in Binny" width="49%">
   <img src="assets/search.png" alt="Searching by tag, with a suggestion and its count" width="49%">
 </p>
 
@@ -73,7 +73,7 @@ upload from link still in progress, so let those finish first.
 
 Binny fits a phone: the folder tree and tags move into a drawer that covers the screen (an X closes
 it), along with the theme switch and sign-out, search moves to a bar along the bottom, within
-thumb's reach, and each file's size and date sit under its name, beside its number of tags.
+thumb's reach, and each file's size and date sit under its name.
 
 <p align="center">
   <img src="assets/phone-folder.png" alt="A folder on a phone" width="30%">
