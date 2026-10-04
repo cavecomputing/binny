@@ -418,7 +418,14 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .search input::placeholder { font-size: 13px; } /* so all of it still fits */
     .search .icon-btn { width: 32px; height: 32px; }
     .suggest { top: auto; bottom: calc(100% + 6px); }
-    .subbar, .selbar { padding-inline: var(--app-space-4); }
+    .subbar { padding-inline: var(--app-space-4); }
+    /* The selection bar is one row of icons: Clear, the count, then the actions. */
+    .selbar { flex-wrap: nowrap; gap: var(--app-space-1); padding: var(--app-space-2) var(--app-space-3); }
+    .selbar b { white-space: nowrap; }
+    .selbar .cc-btn { width: 44px; height: 44px; padding: 0; justify-content: center; }
+    .selbar .cc-btn span { display: none; }
+    .selbar .cc-btn .i { width: 20px; height: 20px; }
+    .selbar .cc-btn:last-child { order: -1; margin-right: var(--app-space-2); }
     /* A roomy checkbox cell, so a tap near it toggles the row instead of missing. */
     .chk { width: 52px; min-width: 52px; }
     .chk input { width: 22px; height: 22px; }
