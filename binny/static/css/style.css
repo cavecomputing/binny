@@ -261,16 +261,16 @@ button.twisty:hover { background: var(--border); color: var(--fg); }
 .name-text .path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
 .name-text .path:hover { text-decoration: underline; }
 .meta { display: none; font-size: 11.5px; color: var(--fg-muted); }
-.tags { display: flex; flex-wrap: wrap; gap: var(--app-space-1); }
-.meta-tags { display: none; margin-top: var(--app-space-1); }
-.col-tags { width: 30%; }
+.tag-count { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-inset); color: var(--fg-muted); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; transition: color 120ms ease, border-color 120ms ease; }
+.tag-count:hover { border-color: var(--accent-text); color: var(--accent-text); }
+.tag-count .i { width: 12px; height: 12px; }
+.meta .tag-count { margin-left: var(--app-space-3); padding-inline: 6px; line-height: 1.3; vertical-align: middle; }
+.col-tags { width: 1%; white-space: nowrap; }
 /* max-width: 0 keeps a long name or tag from widening the table past the screen; it shortens instead. */
 .files td:has(> .name) { width: 70%; max-width: 0; }
 @media (min-width: 761px) {
     #trashList td:has(> .name) { width: 45%; } /* room for where each came from */
 }
-.files td.col-tags { max-width: 0; }
-.tags .cc-tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .files--no-tags .col-tags { display: none; }
 a.cc-tag, button.cc-tag { line-height: 1.3; text-decoration: none; transition: color 120ms ease, border-color 120ms ease; }
 a.cc-tag:hover, button.cc-tag:hover { border-color: var(--accent-text); color: var(--accent-text); }
@@ -432,7 +432,6 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
     .col-size, .col-mod, .col-tags { display: none; }
     .files td:has(> .name) { width: 100%; }
     .meta { display: block; }
-    .meta-tags { display: flex; }
     .acts { opacity: 1; }
     .acts .icon-btn { width: 36px; height: 36px; }
     .uploads { left: var(--app-space-4); right: var(--app-space-4); bottom: calc(var(--dock) + var(--app-space-4)); width: auto; }

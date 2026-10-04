@@ -27,7 +27,8 @@ still being made. Update them as they settle rather than working around them.
   opening and going up. `l` stays "Upload from link", so it isn't vim's right.
   On the highlighted rows: `t` tags, `r` (or F2) renames, `m` moves, `s` (save) downloads (a selection as a
   zip) and Del trashes.
-- **Tags:** any file or folder can carry tags, and the search box finds things anywhere by tag or
+- **Tags:** any file or folder can carry tags (the list shows only how many, a button that opens
+  the tag editor; hovering it lists them), and the search box finds things anywhere by tag or
   name. It reuses imgy's ideas rather than inventing new ones: the expression syntax below, tag
   suggestions with counts, tab completion, and one tag editor for an item or a whole selection that
   previews what Enter will do. Tags are lowercase, at most 100 characters, with no spaces, commas
