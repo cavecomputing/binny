@@ -199,13 +199,15 @@ def test_a_running_download_cancels(client, files, remote, in_the_background):
     assert list(files.iterdir()) == []
 
 
-def test_a_download_whose_folder_moves_fails(client, files, remote, in_the_background):
+def test_a_download_whose_folder_moves_fails(client, files, remote, in_the_background, monkeypatch):
+    monkeypatch.setattr(downloader, 'CHUNK', 1)  # so the folder check comes every 64 bytes, not 64 MB
     client.post('/api/folders', json={'parent': '', 'name': 'docs'})
     job = download(client, f'{remote}/slow', 'docs')
     wait_for(client, job['id'], lambda job: job['received'] > 0)
     client.post('/api/rename', json={'path': 'docs', 'name': 'papers'})
     job = wait_for(client, job['id'], lambda job: job['state'] != 'downloading')
     assert (job['state'], job['error']) == ('failed', 'The folder it was going into moved')
+    assert job['received'] < job['size']  # it stopped rather than fetch the rest into the trash
     assert listing(client, 'papers') == {}
 
 

@@ -210,8 +210,11 @@ def fetch(job):
                         raise Stopped('Cancelled')
                     out.write(chunk)
                     job.received += len(chunk)
-                    if job.received % (64 * CHUNK) < len(chunk) and room(out.fileno()) < 0:  # every 64 MB or so
-                        raise Stopped('The disk is nearly full')
+                    if job.received % (64 * CHUNK) < len(chunk):  # every 64 MB or so
+                        if room(out.fileno()) < 0:
+                            raise Stopped('The disk is nearly full')
+                        if not partial.exists():  # its folder was renamed, moved or trashed: stop rather than fill it
+                            raise Stopped('The folder it was going into moved')
             if job.size is not None and job.received < job.size:
                 raise Stopped('The connection closed before the end')
             with storage.NAME_LOCK:
