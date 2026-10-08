@@ -43,6 +43,14 @@ export async function load() {
     const search = currentSearch();
     const folder = search === null ? currentFolder() : state.folder;
     const request = ++latest;
+    // The folder is the new one from here on, before its listing arrives, so an upload or a new
+    // folder asked for right after opening it goes into it and not into the one before.
+    if (folder !== state.folder || search !== state.search) {
+        state.selected.clear();
+        anchor = cursor = null;
+    }
+    state.folder = folder;
+    state.search = search;
     let listing;
     try {
         listing = search === null ? await api.get('/api/list', { folder }) : await api.get('/api/search', searchParams(search));
@@ -51,12 +59,6 @@ export async function load() {
         return;
     }
     if (request !== latest) return;
-    if (folder !== state.folder || search !== state.search) {
-        state.selected.clear();
-        anchor = cursor = null;
-    }
-    state.folder = folder;
-    state.search = search;
     state.items = listing.items;
     state.truncated = Boolean(listing.truncated);
     const present = new Set(listing.items.map((item) => item.path));
