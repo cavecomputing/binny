@@ -193,6 +193,13 @@ def test_search_results_carry_tags_and_folder_totals(client, files):
     assert (item['path'], item['tags'], item['items'], item['size']) == ('trip', ['x'], 1, 3)
 
 
+def test_search_refuses_more_tags_than_sqlite_can_join(client, files):
+    upload(client, 'a.txt')
+    assert client.get('/api/search', query_string=[('tag', 't')] * 50).status_code == 200
+    response = client.get('/api/search', query_string=[('tag', f't{i}') for i in range(51)])
+    assert (response.status_code, response.json) == (400, {'error': 'Search for at most 50 tags at a time'})
+
+
 def test_search_stops_at_its_limit(client, files, monkeypatch):
     monkeypatch.setattr(tags_api, 'SEARCH_LIMIT', 2)
     for name in ('a.txt', 'b.txt', 'c.txt'):

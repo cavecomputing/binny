@@ -11,6 +11,7 @@ from .common import items_arg, json_body
 bp = Blueprint('tags', __name__)
 
 SEARCH_LIMIT = 2000
+MAX_SEARCH_TAGS = 50  # each is a join, and SQLite joins at most 64 tables
 
 
 def tag_arg(tag):
@@ -119,6 +120,8 @@ def search():
     name = words(request.args.get('name', '')).strip()
     if not (include or exclude or name):
         return {'items': [], 'truncated': False}
+    if len(include) > MAX_SEARCH_TAGS:
+        abort(400, f'Search for at most {MAX_SEARCH_TAGS} tags at a time')
 
     # Joins on the included tags let SQLite start from the tag index; the rest filter what's left.
     joins = [f'JOIN tags AS t{i} ON t{i}.path = entries.path AND t{i}.tag = ?' for i in range(len(include))]
