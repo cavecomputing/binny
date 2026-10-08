@@ -3,8 +3,6 @@
 They validate what the client sent and abort() with the message the frontend shows, so route
 handlers can stay on the happy path.
 """
-import os
-
 from flask import abort, request
 
 from .. import storage
@@ -42,7 +40,7 @@ def item_arg(path):
     rel, item = cleaned(path)
     if not rel:
         abort(400, 'Pick a file or folder')
-    if item.is_symlink() or not os.path.lexists(item):
+    if not storage.plain(item):
         abort(404, f'"{storage.name_of(rel)}" no longer exists')
     return rel, item
 

@@ -37,13 +37,14 @@ class Pipe:
 
 
 def walk(path, name):
-    """(path, name in the zip) for path and, for a folder, everything visible below it."""
+    """(path, name in the zip) for path and, for a folder, every plain file and folder visible below
+    it. Symlinks are left out, and so are pipes and devices, which would block the read."""
     yield path, name
     if path.is_dir():
         with os.scandir(path) as entries:
             children = sorted(entries, key=lambda entry: entry.name)
         for entry in children:
-            if not entry.name.startswith('.') and not entry.is_symlink():
+            if not entry.name.startswith('.') and (entry.is_file(follow_symlinks=False) or entry.is_dir(follow_symlinks=False)):
                 yield from walk(Path(entry.path), f'{name}/{entry.name}')
 
 

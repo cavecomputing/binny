@@ -32,7 +32,7 @@ def stored_file(path):
     """A file, shown or downloaded (always downloaded with ?download), with range requests for
     seeking and resuming. A folder downloads as a zip."""
     rel, item = cleaned(path)
-    if item.is_symlink() or not item.exists():
+    if not storage.plain(item):
         abort(404)
     name = storage.name_of(rel)
     if item.is_dir():

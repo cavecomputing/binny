@@ -123,6 +123,12 @@ def make_folders(path):
     return created
 
 
+def plain(path: Path):
+    """Whether path is an ordinary file or folder: not a symlink, a pipe or a device, which Binny
+    neither lists nor serves, and whose stat the index can't record."""
+    return not path.is_symlink() and (path.is_file() or path.is_dir())
+
+
 def child(folder, name):
     return f'{folder}/{name}' if folder else name
 

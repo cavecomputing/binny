@@ -18,10 +18,11 @@ bp = Blueprint('trash', __name__)
 
 
 def trash_entries():
-    """The visible entries of data/files/.trash/."""
+    """The visible entries of data/files/.trash/: plain files and folders, like a listing's."""
     try:
         with os.scandir(config.TRASH_DIR) as entries:
-            return [entry for entry in entries if not entry.name.startswith('.')]
+            return [entry for entry in entries if not entry.name.startswith('.')
+                    and (entry.is_file(follow_symlinks=False) or entry.is_dir(follow_symlinks=False))]
     except FileNotFoundError:
         return []
 
@@ -39,7 +40,7 @@ def names_arg(names):
     for name in names:
         if not isinstance(name, str) or not name or '/' in name or '\0' in name or name.startswith('.'):
             abort(400, 'Invalid name')
-        if not os.path.lexists(config.TRASH_DIR / name):
+        if not storage.plain(config.TRASH_DIR / name):
             abort(404, 'That is no longer in the trash')
     return list(dict.fromkeys(names))
 
@@ -105,7 +106,7 @@ def restore():
     restored = []
     for name in names_arg(json_body().get('names')):
         source = config.TRASH_DIR / name
-        is_dir = source.is_dir() and not source.is_symlink()
+        is_dir = source.is_dir()
         with get_db() as conn:
             record = conn.execute('SELECT original FROM trash WHERE name = ?', (name,)).fetchone()
             original = record['original'] if record else split_trash_name(name)[1]

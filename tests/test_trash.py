@@ -100,6 +100,16 @@ def test_things_put_in_the_trash_by_hand_show_and_restore_to_the_top(client, fil
     assert (files / 'stray.txt').read_text() == 'hi'
 
 
+def test_a_symlink_put_in_the_trash_by_hand_is_hidden(client, files):
+    """Restoring it would put a symlink, which listings hide, back among the files."""
+    config.TRASH_DIR.mkdir()
+    (files / 'real.txt').write_text('hi')
+    (config.TRASH_DIR / 'link.txt').symlink_to(files / 'real.txt')
+    assert trash_items(client) == []
+    assert client.post('/api/trash/restore', json={'names': ['link.txt']}).status_code == 404
+    assert not (files / 'link.txt').exists()
+
+
 def test_delete_forever_removes_only_what_was_picked(client, files):
     upload(client, 'a.txt')
     upload(client, 'folder/b.txt')

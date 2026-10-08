@@ -1,4 +1,5 @@
 import io
+import os
 import zipfile
 
 import pytest
@@ -64,6 +65,16 @@ def test_hidden_and_escaping_paths_are_refused(client, stored, url):
 
 def test_missing_file_is_404(client, stored):
     assert client.get('/files/nope.txt').status_code == 404
+
+
+def test_a_pipe_is_404_and_left_out_of_a_zip(client, stored):
+    """Reading a named pipe blocks until something writes to it, which would hold the thread forever."""
+    os.mkfifo(stored / 'trip' / 'pipe')
+    (stored / 'trip' / 'link.txt').symlink_to(stored / 'trip' / 'a.txt')
+    assert client.get('/files/trip/pipe').status_code == 404
+    assert client.get('/files/trip/link.txt').status_code == 404
+    assert zip_names(client.get('/files/trip')) == ['trip/', 'trip/a.txt', 'trip/sub/', 'trip/sub/b.txt']
+    assert client.post('/zip', data={'paths': ['trip/pipe']}).status_code == 404
 
 
 def test_a_folder_downloads_as_a_zip(client, stored):
