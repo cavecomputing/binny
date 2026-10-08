@@ -154,7 +154,7 @@ neighbour.
 | `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`, a short-lived connection per use. |
 | `binny/auth.py` | The login: sign-in and sign-out routes, `require_login()` in front of everything else, and the cookie signing key. |
 | `binny/views.py` | The page, the stored files (`/files/<path>`: shown or downloaded, a folder as a zip) and `POST /zip` for a multi-selection. |
-| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), `free_name()` for "name (1).ext", and `partial_in()` for the hidden file a new file is written to. |
+| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), `plain()` for what counts as an item (a file or folder, never a symlink, pipe or device), `free_name()` for "name (1).ext", and `partial_in()` for the hidden file a new file is written to. |
 | `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. Its scans delete partial files left behind. |
 | `binny/tags.py` | The `tags` table: `clean()` for a tag from the client, `of()` and `attach()` to read them, and `move()` and `drop()`, which keep tags with an item through renames, moves and the trash. |
 | `binny/archive.py` | Zips streamed to the browser while they're written. |
