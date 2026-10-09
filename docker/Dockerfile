@@ -1,6 +1,6 @@
 # The build context is the repo root, not this folder, so COPY paths start there.
 # compose.yml sets that up; to build by hand: docker build -f docker/Dockerfile .
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
