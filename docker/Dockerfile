@@ -7,7 +7,7 @@ WORKDIR /app
 # Install Python deps from uv.lock first (cache-friendly layer). uv is mounted for this
 # step only, so it isn't left in the image.
 COPY pyproject.toml uv.lock ./
-RUN --mount=from=ghcr.io/astral-sh/uv:0.12.21,source=/uv,target=/bin/uv \
+RUN --mount=from=ghcr.io/astral-sh/uv:0.12.24,source=/uv,target=/bin/uv \
     uv sync --locked --no-dev --no-cache --compile-bytecode --no-python-downloads
 ENV PATH="/app/.venv/bin:$PATH"
 
