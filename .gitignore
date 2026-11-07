@@ -1,7 +1,5 @@
-# Python/cache output
-__pycache__/
-*.pyc
-.pytest_cache/
+# The binary go build makes
+/binny
 
 # Local runtime state and secrets
 data/
@@ -12,7 +10,6 @@ data/
 .env.*
 
 # Local tooling metadata
-.venv/
 .claude/
 
 # OS metadata

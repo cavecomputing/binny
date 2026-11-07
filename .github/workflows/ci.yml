@@ -1,0 +1,49 @@
+# Tests Binny on Linux and Windows, the two systems it is released for, on every push and pull
+# request that changes more than docs. release.yml runs this first, so a red run stops a release.
+name: CI
+
+on:
+  push:
+    # Tags are left to release.yml, which runs this workflow itself.
+    branches: ['**']
+    paths-ignore: ['**.md', 'assets/**']
+  pull_request:
+    paths-ignore: ['**.md', 'assets/**']
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the run still going for the older one. A release's run
+# is grouped by its caller's name (a called workflow sees its caller's), so a push of VERSION
+# doesn't cancel the release's tests with its own CI run, or the other way round.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      # Let both finish, so one failure doesn't hide the other.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  # Formatting is the same everywhere, and Windows checks files out with CRLF line endings.
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }

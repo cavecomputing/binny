@@ -73,15 +73,16 @@ This file is the only agent doc. Don't add an `AGENTS.md` or a second copy of th
 ## Least code that does the job
 
 Aim for the smallest diff that completes the task in full. This is meant to stay a small,
-no-build, single-process app, and it stays approachable only while changes stay small.
+single-binary, single-process app with no frontend build, and it stays approachable only while
+changes stay small.
 
 - Prefer editing existing code over adding new code, and a few lines at the right call site over a
   new helper, module or class. Add a file only when something forces it.
 - Reuse what is already here. A second implementation of something the repo already does is the
   most expensive kind of code.
 - **No new dependency without asking first.**
-- Leave out what nothing needs yet: config knobs, feature flags, an abstraction with one caller,
-  `try`/`except` around code that doesn't raise, re-validation of data the route already validated.
+- Leave out what nothing needs yet: config knobs, feature flags, an interface or abstraction with one
+  caller, error handling for code that can't fail, re-validation of data the route already validated.
 - Deleting code is a legitimate way to finish a task. Say so when the fix turns out to be a removal.
 
 This governs the amount of code, not the amount of work. Deliver everything that was asked and run
@@ -94,39 +95,59 @@ or does — long enough to be unambiguous where it is *used*, short enough to re
 
 - Prefer the specific noun to the category: `stored_path`, `size_bytes`, `file_ids` over `value`,
   `data`, `items`.
-- Name a function for what it returns or does, not how it works — `resolve_upload_path()`,
-  `free_space()`, `formatSize()`.
+- Name a function for what it returns or does, not how it works — `FreeName()`, `Usage()`,
+  `formatSize()`.
 - Don't encode the type or the scope in the name (`fileObjDict`, `tmpList`), and don't abbreviate
   past recognition.
-- Follow the module you are editing — `snake_case` in Python, `camelCase` in JS — over any
-  preference of your own.
+- Follow the language you are editing — Go's `MixedCaps` (exported only when another package uses
+  it, and no stutter: `storage.CleanPath`, not `storage.StorageCleanPath`), `camelCase` in JS — over
+  any preference of your own.
 
 Renaming existing code is its own task. Don't fold a rename into an unrelated change, where it
 buries the real diff under noise.
 
 ## Run / test
 
-Flask backend, vanilla-JS frontend with no build step, same shape as cozy and imgy: SQLite, `uv`,
-pytest, Docker.
+Go backend, vanilla-JS frontend with no build step: SQLite, one binary, Docker. It runs on Linux
+and Windows, so code that touches the system has to build and pass its tests on both (CI runs them
+on each).
 
 ```bash
-uv sync                                        # install the locked dependencies into .venv
-BINNY_PASSWORD=dev uv run app.py --debug       # dev server on 127.0.0.1:5000 (--host / --port to change)
-BINNY_DATA_DIR=/path/to/data BINNY_PASSWORD=dev uv run app.py   # data directory (default: ./data)
+BINNY_PASSWORD=dev go run .                    # dev server on 127.0.0.1:5000 (-host / -port to change)
+BINNY_DATA_DIR=/path/to/data BINNY_PASSWORD=dev go run .   # data directory (default: ./data)
+go build                                       # ./binny, with the page and static files inside it
+GOOS=windows go vet ./...                      # does it still build for Windows (tests included)?
 
-uv run pytest                                  # full suite (use `uv run`, not bare pytest)
-uv run pytest tests/test_auth.py::test_sign_out -x
-node --check binny/static/js/<file>.js         # frontend syntax check; there is no JS test suite
+go test ./...                                  # full suite, the end-to-end test included
+go test -run TestEndToEnd .                    # just the end-to-end test: a day in the life over real HTTP
+go test ./internal/server -run TestRenameRefusesATakenName
+go vet ./... && gofmt -l .                     # both must print nothing
+node --check web/static/js/<file>.js           # frontend syntax check; there is no JS test suite
 
 docker compose -f docker/compose.yml up --build   # BINNY_PASSWORD goes in docker/.env
 ```
 
-The app refuses to start without `BINNY_PASSWORD`, including `uv run app.py --help`.
+The app refuses to start without `BINNY_PASSWORD`. The static files and templates are embedded at
+build time, so a change to them shows after a restart of `go run .`.
 
-Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`; Python is pinned in
-`.python-version`. Change them with `uv add` / `uv remove` (or edit `pyproject.toml` and run
-`uv lock`) and commit both files together. Never `pip install` into the project, and never bump the
-`0.0.0` in `pyproject.toml` — it is a packaging placeholder, not a version.
+The Go version is pinned by the `go` line in `go.mod` (the `go` command fetches it when it's
+newer than the one installed) and by the `golang` image in `docker/Dockerfile`; change them
+together. Dependencies are in `go.mod` and `go.sum`: change them with `go get` and `go mod tidy`
+and commit both files together. The only one is `modernc.org/sqlite`, a SQLite that needs no cgo,
+so the binary builds anywhere with `CGO_ENABLED=0`.
+
+### Releases
+
+Versions follow semantic versioning (`1.2.3`), and `VERSION` holds the current one (`binny -version`
+prints it, and the startup log names it). Only Matt decides when to release, so never change
+`VERSION` or make a tag or release unless he asks. A release is: set `VERSION`, commit and push to
+`main`. [tag.yml](.github/workflows/tag.yml) sees the new version, tags the commit `v1.2.3`
+(unless that tag exists) and calls [release.yml](.github/workflows/release.yml) (a tag a workflow
+pushes starts no other workflow by itself; pushing a tag by hand still starts it). That runs CI on
+Linux and Windows, refuses a tag that doesn't match `VERSION`, and posts Linux (x86-64, ARM64) and
+Windows (x86-64) builds on a GitHub Release. A tag with a suffix (`v1.2.3-beta.1`) becomes a
+pre-release. [ci.yml](.github/workflows/ci.yml) runs `go vet` and `go test -race` on Linux and
+Windows, and the `gofmt` check, on every push that changes more than Markdown or screenshots.
 
 ### How much verification a change needs
 
@@ -140,40 +161,42 @@ change was verified in the app when it wasn't.
 
 ## Architecture
 
-Single-process Flask app, vanilla-JS frontend, no build step. The layout is meant to be readable at
-a glance: one thing per file, named for what it owns, so finding the code for a feature never takes
-a search. Keep it that way — a new feature gets its own blueprint or module rather than growing a
-neighbour.
+One Go process: `net/http` with the standard `ServeMux` (method and wildcard patterns), the
+page from `html/template`, and the frontend as vanilla JS with no build step. The layout follows
+Go's own guidance for a server: `main.go` at the root, everything else in packages under
+`internal/`, one thing per package, named for what it owns, so finding the code for a feature
+never takes a search. Keep it that way — a new feature gets its own file (or package, if other
+packages need it) rather than growing a neighbour. Packages depend downwards only:
+`server` → `auth`, `downloader`, `archive` → `db` → `storage`.
 
 | Path | Owns |
 |---|---|
-| `app.py` | Entry point, and the **only** Python file at the repo root: `app = create_app()`, which `uv run app.py` and `gunicorn app:app` both name. No logic lives here. |
-| `binny/` | The application package. Everything else in Python goes in here. |
-| `binny/__init__.py` | `create_app()`: cookie settings, `init_db()`, the cross-site write guard, the login guard, blueprints, and the startup scan of `data/files/` in a background thread. |
-| `binny/config.py` | Paths, read once from the environment (`BINNY_DATA_DIR`, `BINNY_PASSWORD`). |
-| `binny/db.py` | Schema (`init_db()`, idempotent) and `get_db()`, a short-lived connection per use. |
-| `binny/auth.py` | The login: sign-in and sign-out routes, `require_login()` in front of everything else, and the cookie signing key. |
-| `binny/views.py` | The page, the stored files (`/files/<path>`: shown or downloaded, a folder as a zip) and `POST /zip` for a multi-selection. |
-| `binny/storage.py` | The one place a client path becomes a real one (`clean_path()`, `resolve()`), the rules for names (`check_name()`), `plain()` for what counts as an item (a file or folder, never a symlink, pipe or device), `free_name()` for "name (1).ext", and `partial_in()` for the hidden file a new file is written to. |
-| `binny/index.py` | The `entries` table, Binny's index of the disk: `refresh()` on every listing, `index_tree()` on start, `record()` for what the app adds, `move_rows()` for renames and moves, folder totals. Its scans delete partial files left behind. |
-| `binny/tags.py` | The `tags` table: `clean()` for a tag from the client, `of()` and `attach()` to read them, and `move()` and `drop()`, which keep tags with an item through renames, moves and the trash. |
-| `binny/archive.py` | Zips streamed to the browser while they're written. |
-| `binny/downloader.py` | Upload from link: the download jobs, kept in memory, each run in a thread of its own. |
-| `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads` (start, list, cancel, clear the finished). `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
-| `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
-| `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click and keyboard selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `rowmenu.js` (the "…" menu at the end of each row, in the file list and the trash: a row's actions behind one button so a long name keeps its room), `sidebar.js` (folder tree, and the handle that sets its width), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
-| `binny/static/` | Also `manifest.webmanifest` and the `icon-*.png` and `apple-touch-icon.png` it and `base.html` name, which make Binny installable as an app (standalone display; the page fills the window edge to edge everywhere, so it needs nothing special there). They are the favicon's folder rendered at those sizes (the maskable one smaller, for its safe zone); redo them with it. |
-| `binny/static/css/` | `style.css`: the tokens, the shared components and every view's layout. |
-| `tests/` | pytest, one file per blueprint or module. |
-| `docker/` | `Dockerfile`, `compose.yml` and `entrypoint.sh`, as in imgy: gunicorn with one gthread worker on port 5000, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
+| `main.go` | Entry point: reads `BINNY_DATA_DIR`, `BINNY_PASSWORD` and the `-host`/`-port`/`-version` flags (the version is `VERSION`, embedded), opens the disk and the database, starts the startup scan of `data/files/` in a goroutine, and serves. No logic lives here. |
+| `internal/storage/` | The one way to the files: `Disk`, an `os.Root` on `data/files/`, so no path leads out of it (`Plain()` for what counts as an item — a file or folder, never a symlink, pipe or device — `IsFolder()`, `FreeName()` for "name (1).ext" under `NameLock`, `MakeFolders()`, `Usage()`, the one part written for each system: `usage_unix.go`, `usage_windows.go`); the rules for client paths and names (`CleanPath()`, `CheckName()`, `Numbered()`, `PartialName()` for the hidden file a new file is written to); kinds and content types by extension (`KindOf()`, `ContentType()`); and `Problem()`, what the system said went wrong. |
+| `internal/db/` | `binny.db`: the schema (`Open()`, idempotent) and one `*sql.DB`; `Update()` runs a function in a transaction, and `DB` and `Tx` share the query methods. `entries.go` is Binny's index of the disk (`Refresh()` on every listing, `IndexTree()` on start, `Record()` for what the app adds, `MoveRows()` for renames and moves, `FolderTotals()`, `List()`); its scans delete partial files left behind. `tags.go` is the tags (`CleanTag()`, `Tags()`, `MoveTags()` and `DropTags()`, which keep tags with an item through renames, moves and the trash, renaming or deleting a tag everywhere, and `Search()`), `trash.go` the trash records, `folders.go` the sidebar's tree. |
+| `internal/auth/` | The login: the sign-in and sign-out handlers, `Require()` in front of everything else, and the signed session cookie. |
+| `internal/archive/` | Zips streamed to the browser while they're written. |
+| `internal/downloader/` | Upload from link: `Manager` keeps the download jobs in memory and runs each in a goroutine of its own; `names.go` checks the link (`ParseURL()`) and names the file (`safeName()`). |
+| `internal/server/` | Every route, listed in `server.go`'s `New()`, with `handle()`, which turns a handler's error into the status and message the UI shows. One file per resource: `files.go` (list, upload, rename, move), `folders.go` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash.go` (trash, restore, delete forever, empty), `tags.go` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads.go` (start, list, cancel, clear the finished), `views.go` (the stored files, `/files/<path>`: shown or downloaded, a folder as a zip, and `POST /zip` for a multi-selection). `args.go` turns request arguments into checked paths and names or fails with the message the UI shows. |
+| `web/` | `web.go` embeds the rest into the binary: `Page()` parses a template, `Static()` serves the static files with ETags. |
+| `web/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
+| `web/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click and keyboard selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `rowmenu.js` (the "…" menu at the end of each row, in the file list and the trash: a row's actions behind one button so a long name keeps its room), `sidebar.js` (folder tree, and the handle that sets its width), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
+| `web/static/` | Also `manifest.webmanifest` and the `icon-*.png` and `apple-touch-icon.png` it and `base.html` name, which make Binny installable as an app (standalone display; the page fills the window edge to edge everywhere, so it needs nothing special there). They are the favicon's folder rendered at those sizes (the maskable one smaller, for its safe zone); redo them with it. |
+| `web/static/css/` | `style.css`: the tokens, the shared components and every view's layout. |
+| `*_test.go` | Beside the code they test, one per file or concern; `internal/server/server_test.go` has the helpers. `e2e_test.go` at the root drives the whole app over real HTTP through `main.go`'s `open()`. |
+| `docker/` | `Dockerfile` (the binary built in `golang`, run in `debian:trixie-slim`), `compose.yml` and `entrypoint.sh`, as in imgy: port 5000, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
 | `assets/` | The README's screenshots. |
+| `.github/workflows/` | CI and releases (see Releases above). |
 
-Fill in the "Owns" column with real names as modules land, and add the rules the code can't tell
+Fill in the "Owns" column with real names as code lands, and add the rules the code can't tell
 you on its own under it:
 
-- **Run one worker process** (threads are fine). `storage.NAME_LOCK`, which stops two writers
-  claiming the same free name, lives in memory, and so do the downloader's jobs.
-- `create_app(index_files=False)` skips the startup scan; only the tests use it.
+- **Run one process.** `storage.Disk.NameLock`, which stops two writers claiming the same free
+  name, lives in memory, and so do the downloader's jobs.
+- No package-level state: what a handler needs comes in through `server.New()`, so tests build a
+  whole app on a temporary directory.
+- Handlers return an error rather than writing one: `fail(status, message)` for what the user
+  should read, anything else is logged and becomes a 500 (a disk error says what the disk said).
 
 ### Frontend conventions
 
@@ -212,7 +235,7 @@ you on its own under it:
   second green beside imgy. It is sized like them too: a folder is wider than tall, so at their
   width it looked small, and the favicon draws it 1.15× larger (stroke kept at 2.2) to cover as
   much of the tile as their glyphs do. Size a new glyph by the area it covers, not its width.
-  [binny/static/favicon.svg](binny/static/favicon.svg) is the source and
+  [web/static/favicon.svg](web/static/favicon.svg) is the source and
   `favicon.png` (256px) is rendered from it; change both together. In the page, the brand is
   the sprite's folder in `--accent-ink` on an `--accent` tile, beside the `wordmark`.
 - The [interface mockup](https://claude.ai/artifact/XUjeUxP9dUYAQDFV9N6kXj) is the reference for
@@ -224,19 +247,22 @@ you on its own under it:
 The stored files are the whole point of the app, so anything that writes, moves or deletes them is
 held to a higher bar than the rest of the code:
 
-- **Never trust a client-supplied filename or path.** Resolve every path under the data directory
-  and refuse anything that escapes it (`..`, absolute paths, symlinks out). This needs a test.
+- **Never trust a client-supplied filename or path.** Every path goes through `storage.CleanPath()`
+  (no `..`, no hidden parts) and reaches the disk only through `storage.Disk`, whose `os.Root`
+  refuses anything that escapes `data/files/`, symlinks out included (and every absolute symlink,
+  even one pointing inside: links in there must be relative to be followed). This needs a test.
 - Write uploads to a temp file in the same filesystem and rename into place, so a dropped
-  connection never leaves a half-written file under the real name (`storage.partial_in()`). A
+  connection never leaves a half-written file under the real name (`storage.PartialName()`). A
   partial file nothing has written to for a day was cut short by a restart, and scanning its folder
   deletes it.
 - Stream uploads and downloads; never read a whole file into memory. Downloads should support
   range requests so large files and media resume and seek.
-- A taken name gets " (1)", " (2)" … (`free_name()`); an upload or a move never overwrites. Only a
-  rename refuses a taken name, because the user typed it.
+- A taken name gets " (1)", " (2)" … (`FreeName()`); an upload or a move never overwrites (and
+  `os.Root.Rename` would, so always take a free name under `NameLock`). Only a rename refuses a
+  taken name, because the user typed it.
 - A stored file opens in the browser only if that can't run anything as part of Binny: media, PDFs
   and text, with all text (HTML too) sent as `text/plain` and SVG sandboxed. Everything else
-  downloads (`views.shown_as()`).
+  downloads (`server.shownAs()`).
 - Delete means **move to trash**. Only "Empty trash" (and deleting a single item from inside the
   trash) removes a file for good, and both ask for confirmation in the UI.
 
@@ -253,7 +279,7 @@ data/                 # BINNY_DATA_DIR, default ./data
   manager, so the app's folders are real folders and a file's name on disk is its name in the app.
   Never rename, hash or wrap files for the app's convenience. Files added, moved or deleted outside
   the app show up on the next listing of their folder or of a folder above it whose modified time
-  moved (`index.refresh()`), and everywhere after a restart; the app must cope with that rather than
+  moved (`db.Refresh()`), and everywhere after a restart; the app must cope with that rather than
   assume it owns the tree.
 - **`data/binny.db` holds only metadata, never file contents**, keyed by the path relative to
   `data/files/`. It exists so listing, sorting and tag search never have to walk the disk:
@@ -261,10 +287,10 @@ data/                 # BINNY_DATA_DIR, default ./data
     modified time (`mtime`). A folder's item count and total size are summed from the rows below
     it in one query each (the primary key serves the range), never stored, so they can't drift.
     The kind (image, video, document, archive…) comes from the extension when listing
-    (`storage.KINDS`);
+    (`storage.KindOf()`);
   - `tags`: a row per (path, tag), indexed by tag, so a tag search is one indexed query. Tags go
-    with an item the app renames, moves or trashes (`tags.move()`), and whatever the app creates
-    starts clean (`tags.drop()`). Something moved or deleted outside the app leaves its tags at
+    with an item the app renames, moves or trashes (`MoveTags()`), and whatever the app creates
+    starts clean (`DropTags()`). Something moved or deleted outside the app leaves its tags at
     the old path, where nothing shows them (listings and searches only see indexed paths), and
     they come back if it returns.
 
@@ -288,17 +314,17 @@ data/                 # BINNY_DATA_DIR, default ./data
 
 That makes it the one place where Binny reaches out to the network, so:
 
-- Only `http` and `https`, in the link and in every redirect (`downloader.Redirects`). It can reach
+- Only `http` and `https`, in the link and in every redirect (the client's `CheckRedirect`). It can reach
   anything the server can, LAN addresses included; that's deliberate for one user behind a login.
 - Stream the response into a partial file in the destination folder and rename it into place, the
   same as an upload. Never buffer it in memory.
 - Take the filename from `Content-Disposition` or the URL it ended at, then make it one
-  `check_name()` accepts (`safe_name()`); never let the remote server choose the path.
+  `CheckName()` accepts (`safeName()`); never let the remote server choose the path.
 - One download can't fill the disk: one whose size won't fit is refused, and any stops before it
-  would leave less than `KEEP_FREE` (1 GB). Connecting and each read time out after 30 seconds, so
+  would leave less than `keepFree` (1 GB). Connecting and each read time out after 30 seconds, so
   a dead server can't hold a slot.
-- Run it off the request thread (it can take hours) and keep its state where the page can poll it
-  (`GET /api/downloads`). The threads are daemons, so a restart never waits for a download.
+- Run it off the request (it can take hours) and keep its state where the page can poll it
+  (`GET /api/downloads`). Nothing waits for a download on exit, so a restart never waits for one.
 
 ### Access
 
@@ -313,23 +339,27 @@ it still has a login because anything on the tailnet can reach it.
   constant time.
 - The cookie (`binny_session`; cookies ignore the port, so the name must not collide with sibling
   apps) is `HttpOnly`, `SameSite=Lax`, and lasts 400 days when "Keep this device signed in" is
-  ticked. It is signed with a key derived from a random `secret_key` row in `settings` *and* the
-  password, so **changing `BINNY_PASSWORD` signs every device out**; so does deleting that row and
+  ticked, renewed once a day while the device is in use. It holds when it was issued, signed with
+  HMAC-SHA256 under a key derived from a random `secret_key` row in `settings` *and* the password,
+  so **changing `BINNY_PASSWORD` signs every device out**; so does deleting that row and
   restarting.
-- A wrong password holds off every sign-in, from any device, for a second (`auth.next_try`), so
+- A wrong password holds off every sign-in, from any device, for a second (`Auth.nextTry`), so
   guessing goes at one try a second however many requests run at once. Already signed-in devices
   aren't affected.
-- Behind Caddy, `X-Forwarded-Proto` (via `ProxyFix`) decides whether the cookie is `Secure`: over
+- Behind Caddy, `X-Forwarded-Proto` decides whether the cookie is `Secure`: over
   HTTPS it is, over plain HTTP on the LAN it can't be or it would never come back. Caddy passes the
   Host header through unchanged by default.
-- Writes from another site's page are refused (`reject_cross_site_writes()`, the same check as
-  imgy and cozy), so keep state-changing routes on POST/PUT/DELETE.
+- Writes from another site's page are refused (`http.CrossOriginProtection`, the same check as
+  imgy and cozy: `Sec-Fetch-Site`, else `Origin` against the host), so keep state-changing routes
+  on POST/PUT/DELETE.
 
 ## Testing gotchas
 
-[tests/conftest.py](tests/conftest.py)'s `data_dir` fixture points `binny.config`'s paths and
-password at a temporary directory with `monkeypatch`. That only works because every module reads
-them as `config.FILES_DIR` at call time; a `from .config import FILES_DIR` binds the value at
-import, the patch never reaches it, and the tests quietly start writing into the real `data/`.
-Use the `client` fixture for a signed-in test client and `anon` for one that isn't, `files` for the
-temporary `data/files/`, and conftest's `upload()` and `listing()` helpers to drive the API.
+Tests use the standard `testing` package only, with table tests for cases. The server tests in
+[internal/server/server_test.go](internal/server/server_test.go) build the whole app on
+`t.TempDir()`: `newApp(t)` for a signed-in one and `openApp(t, dir, password)` for one that isn't
+(or for a restart on the same directory); `a.do()`, `a.upload()` and `a.listing()` drive the API,
+and `a.write()`, `a.read()` and `names()` look at the disk. Requests go straight to the handler
+through `httptest`, with no network. The download tests serve the far end with `httptest`, and
+the login's timing test runs in a `testing/synctest` bubble so its one-second wait takes no time.
+The sandbox runs tests as root, so a test can't rely on file permissions being refused.

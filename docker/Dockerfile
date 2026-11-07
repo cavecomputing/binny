@@ -1,31 +1,28 @@
 # The build context is the repo root, not this folder, so COPY paths start there.
 # compose.yml sets that up; to build by hand: docker build -f docker/Dockerfile .
-FROM python:3.14-slim
+FROM golang:1.27.3-trixie AS build
 
-WORKDIR /app
+WORKDIR /src
+COPY go.mod go.sum main.go VERSION ./
+COPY internal/ internal/
+COPY web/ web/
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /binny .
 
-# Install Python deps from uv.lock first (cache-friendly layer). uv is mounted for this
-# step only, so it isn't left in the image.
-COPY pyproject.toml uv.lock ./
-RUN --mount=from=ghcr.io/astral-sh/uv:0.12.24,source=/uv,target=/bin/uv \
-    uv sync --locked --no-dev --no-cache --compile-bytecode --no-python-downloads
-ENV PATH="/app/.venv/bin:$PATH"
+# Debian rather than an empty image for the entrypoint's shell and setpriv; the CA certificates
+# are for upload from link's https.
+FROM debian:trixie-slim
 
-COPY app.py .
-COPY binny/ binny/
-COPY docker/entrypoint.sh .
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /binny /app/binny
+COPY docker/entrypoint.sh /app/
 
 EXPOSE 5000
-
 ENV BINNY_DATA_DIR=/data
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 
+# No curl in the image: bash asks for the sign-in page itself.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/login')" || exit 1
+    CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/5000 && printf "GET /login HTTP/1.0\r\n\r\n" >&3 && grep -q " 200 " <&3'
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-# One worker process, with threads: the downloads, and the lock that hands out free names, live in
-# its memory. A gthread worker isn't timed out by a long upload or download. No control socket:
-# nothing uses it, and it would want a home folder the app user doesn't have.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--worker-class", "gthread", "--threads", "16", "--timeout", "120", "--no-control-socket", "app:app"]
+CMD ["/app/binny", "-host", "0.0.0.0"]
