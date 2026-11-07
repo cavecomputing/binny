@@ -68,7 +68,11 @@ func New(disk *storage.Disk, store *db.DB, login *auth.Auth, downloads *download
 	mux.HandleFunc("POST /api/downloads/clear", s.handle(s.clearDownloads))
 
 	// Writes from another site's page in the same browser are refused.
-	return http.NewCrossOriginProtection().Handler(login.Require(mux))
+	crossOrigin := http.NewCrossOriginProtection()
+	crossOrigin.SetDenyHandler(s.handle(func(http.ResponseWriter, *http.Request) error {
+		return fail(http.StatusForbidden, "Cross-site request blocked")
+	}))
+	return crossOrigin.Handler(login.Require(mux))
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {

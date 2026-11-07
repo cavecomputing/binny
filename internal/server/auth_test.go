@@ -174,6 +174,9 @@ func TestCrossSiteWritesAreBlocked(t *testing.T) {
 	if code := a.do("POST", "/logout", nil, "Origin", "http://evil.example").Code; code != http.StatusForbidden {
 		t.Errorf("a sign-out from another origin answered %d, want 403", code)
 	}
+	if got := jsonOf(t, a.do("POST", "/api/folders", map[string]string{"parent": "", "name": "x"}, "Origin", "http://evil.example")); got != `{"error":"Cross-site request blocked"}` {
+		t.Errorf("a cross-site API write answered %s, want Binny's JSON error", got)
+	}
 	if code := a.do("GET", "/", nil).Code; code != http.StatusOK {
 		t.Fatalf("GET / after the refused sign-outs answered %d, want 200", code)
 	}
