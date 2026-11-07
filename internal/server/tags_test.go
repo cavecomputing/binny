@@ -363,6 +363,20 @@ func TestSearchRefusesMoreTagsThanSqliteCanJoin(t *testing.T) {
 	}
 }
 
+// SQLite nests the conditions of a query at most 1000 deep, so thousands of excluded tags would be a 500.
+func TestSearchRefusesMoreExcludedTagsThanSqliteCanNest(t *testing.T) {
+	a := newApp(t)
+	a.upload("a.txt", "hello", "")
+	not := url.Values{}
+	for i := range 3000 {
+		not.Add("not", fmt.Sprintf("t%d", i))
+	}
+	response := a.do("GET", "/api/search?"+not.Encode(), nil)
+	if got, want := fmt.Sprint(response.Code, " ", jsonOf(t, response)), `400 {"error":"Search for at most 50 tags at a time"}`; got != want {
+		t.Errorf("3000 excluded tags: got %s, want %s", got, want)
+	}
+}
+
 // The limit itself is tested in package db (TestSearchStopsAtItsLimit), since searchLimit is a const.
 func TestSearchStopsAtItsLimit(t *testing.T) {
 	a := newApp(t)

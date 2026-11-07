@@ -10,7 +10,7 @@ import (
 
 const (
 	searchLimit   = 2000
-	maxSearchTags = 50 // each is a join, and SQLite joins at most 64 tables
+	maxSearchTags = 50 // of each kind: an included one is a join (SQLite joins at most 64 tables), an excluded one a condition (it nests them at most 1000 deep)
 )
 
 // listTags is every tag on something in data/files/, with how many items have it, most used first.
@@ -140,7 +140,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request) error {
 	if len(include) == 0 && len(exclude) == 0 && name == "" {
 		return reply(w, http.StatusOK, map[string]any{"items": []db.Item{}, "truncated": false})
 	}
-	if len(include) > maxSearchTags {
+	if len(include) > maxSearchTags || len(exclude) > maxSearchTags {
 		return fail(http.StatusBadRequest, "Search for at most %d tags at a time", maxSearchTags)
 	}
 	items, truncated, err := s.db.Search(include, exclude, name, searchLimit)
