@@ -1,0 +1,85 @@
+package downloader
+
+import (
+	"errors"
+	"fmt"
+	"mime"
+	"net/http"
+	"net/url"
+	"path"
+	"strings"
+
+	"github.com/cavecomputing/binny/internal/storage"
+)
+
+// ParseURL checks the link the client sent: http or https, with a host and no user name or
+// password. Spaces and other characters a browser would escape are escaped.
+func ParseURL(link string) (string, error) {
+	var escaped strings.Builder
+	for _, b := range []byte(strings.TrimSpace(link)) {
+		if b <= ' ' || b >= 0x7f {
+			fmt.Fprintf(&escaped, "%%%02X", b) // %-escapes already there stay as they are
+		} else {
+			escaped.WriteByte(b)
+		}
+	}
+	u, err := url.Parse(escaped.String())
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || !validPort(u.Port()) {
+		return "", errors.New("Paste a link that starts with http:// or https://")
+	}
+	if u.User != nil {
+		return "", errors.New("Links with a user name or password in them aren't supported")
+	}
+	u.Fragment, u.RawFragment = "", ""
+	return u.String(), nil
+}
+
+func validPort(port string) bool {
+	if port == "" {
+		return true
+	}
+	n := 0
+	for _, digit := range port {
+		n = n*10 + int(digit-'0')
+		if n > 65535 {
+			return false
+		}
+	}
+	return n > 0
+}
+
+// safeName makes a name from the remote end one storage.CheckName accepts: no folders, control
+// characters or leading dots, and short enough to take a " (1)". "download" when nothing usable
+// is left.
+func safeName(name string) string {
+	name = storage.NameOf(strings.ReplaceAll(name, `\`, "/"))
+	name = strings.Map(func(r rune) rune {
+		if r < ' ' {
+			return -1
+		}
+		return r
+	}, name)
+	name = strings.TrimSpace(strings.TrimLeft(strings.TrimSpace(name), "."))
+	ext := path.Ext(name)
+	name = storage.Shortened(name[:len(name)-len(ext)], 240-len(ext)) + ext
+	if name, err := storage.CheckName(name); err == nil {
+		return name
+	}
+	return "download"
+}
+
+func nameInURL(u *url.URL) string { return safeName(u.Path) }
+
+// nameFrom is the file's name: the server's Content-Disposition, else the end of the address it
+// ended at, with an extension from the Content-Type when that has none.
+func nameFrom(response *http.Response) string {
+	name := nameInURL(response.Request.URL)
+	if _, params, err := mime.ParseMediaType(response.Header.Get("Content-Disposition")); err == nil && params["filename"] != "" {
+		name = safeName(params["filename"])
+	}
+	contentType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
+	if path.Ext(name) == "" && err == nil && contentType != "application/octet-stream" {
+		name += storage.ExtensionFor(contentType)
+	}
+	return name
+}

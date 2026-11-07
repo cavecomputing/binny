@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
-{% block head %}
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
-{% endblock %}
-{% block body %}
+{{define "head"}}
+    <script type="module" src="/static/js/main.js"></script>
+{{end}}
+{{define "body"}}
 <div class="shell app" id="shell">
     <aside class="side" id="side">
         <div class="side-head">
@@ -24,7 +23,7 @@
                 <a class="navrow" id="trashNav" href="#trash" data-trash><svg class="i"><use href="#i-trash"/></svg><span>Trash</span><span class="count" id="trashCount"></span></a>
             </nav>
             <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
-            <form class="signout" method="post" action="{{ url_for('auth.logout') }}">
+            <form class="signout" method="post" action="/logout">
                 <button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out"><svg class="i"><use href="#i-logout"/></svg></button>
             </form>
         </div>
@@ -182,4 +181,4 @@
         </div>
     </form>
 </dialog>
-{% endblock %}
+{{end}}
