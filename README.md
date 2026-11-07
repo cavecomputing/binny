@@ -24,6 +24,8 @@ the tags and what's in the trash.
 - Search everything by tag or name
 - Upload from link: paste a URL and the server downloads it into a folder, even after the tab closes
 - Download a file, or a folder or a selection as a zip
+- Keyboard friendly: arrow keys or `j`/`k` to move, `t` tags, `r` renames, `m` moves, `s` downloads,
+  Del trashes
 - Trash with restore; nothing is gone until you empty it
 - One password, remembered per device; dark and light themes, and a phone layout
 
@@ -35,8 +37,9 @@ the tags and what's in the trash.
 ## Quick start
 
 Binny is one file, `binny` (`binny.exe` on Windows), with the page and everything it needs inside
-it. Download it for Linux or Windows from the [latest release](https://github.com/cavecomputing/binny/releases/latest),
-unpack it and run it with a password:
+it. Download the archive for your system from the [latest release](https://github.com/cavecomputing/binny/releases/latest)
+(`.tar.gz` for Linux on x86-64 or ARM64, `.zip` for Windows on x86-64), unpack it and run it with
+a password:
 
 ```bash
 BINNY_PASSWORD=pick-one ./binny
@@ -44,7 +47,7 @@ BINNY_PASSWORD=pick-one ./binny
 
 On Windows, in PowerShell: `$env:BINNY_PASSWORD="pick-one"; .\binny.exe`.
 
-To build it yourself instead, all you need is Git and [Go](https://go.dev/dl/) 1.27 or later:
+To build it yourself instead, all you need is Git and [Go](https://go.dev/dl/) 1.27.3 or later:
 
 ```bash
 git clone https://github.com/cavecomputing/binny.git
