@@ -1,7 +1,6 @@
 package db
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,9 +14,8 @@ func TestCleanTagRefusesBadTags(t *testing.T) {
 	for _, bad := range []string{"", "  ", "two words", "a,b", "old>new", "-x", "+x", "@x", strings.Repeat("x", 101), "tab\there", "nul\x00", "del\x7f"} {
 		t.Run(bad, func(t *testing.T) {
 			tag, err := CleanTag(bad)
-			var invalid InvalidTag
-			if !errors.As(err, &invalid) || invalid == "" {
-				t.Errorf("CleanTag(%q) = %q, %v; want an InvalidTag with a message", bad, tag, err)
+			if err == nil || err.Error() == "" {
+				t.Errorf("CleanTag(%q) = %q, %v; want an error with a message", bad, tag, err)
 			}
 		})
 	}

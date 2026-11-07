@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"unicode"
@@ -13,11 +14,6 @@ import (
 
 const maxTagLength = 100
 
-// InvalidTag is a tag from the client that Binny refuses. Its text is shown to the user.
-type InvalidTag string
-
-func (e InvalidTag) Error() string { return string(e) }
-
 // CleanTag trims and lowercases a tag from the client. Whitespace and commas separate tags when
 // typed, ">" renames one, and a leading "-", "+" or "@" is an operator in the tag syntax (see
 // static/js/tags.js), so none of them can be in a tag.
@@ -25,13 +21,13 @@ func CleanTag(tag string) (string, error) {
 	tag = strings.ToLower(strings.TrimSpace(tag))
 	switch {
 	case tag == "":
-		return "", InvalidTag("A tag can't be empty")
+		return "", errors.New("A tag can't be empty")
 	case utf8.RuneCountInString(tag) > maxTagLength:
-		return "", InvalidTag(fmt.Sprintf("A tag can be at most %d characters", maxTagLength))
+		return "", fmt.Errorf("A tag can be at most %d characters", maxTagLength)
 	case strings.ContainsFunc(tag, func(r rune) bool { return unicode.IsSpace(r) || r == ',' || r == '>' || r < 32 || r == 0x7f }):
-		return "", InvalidTag(fmt.Sprintf(`"%s" can't be a tag: no spaces, commas or ">"`, tag))
+		return "", fmt.Errorf(`"%s" can't be a tag: no spaces, commas or ">"`, tag)
 	case strings.ContainsAny(tag[:1], "-+@"):
-		return "", InvalidTag(fmt.Sprintf(`A tag can't start with "%s"`, tag[:1]))
+		return "", fmt.Errorf(`A tag can't start with "%s"`, tag[:1])
 	}
 	return tag, nil
 }
