@@ -72,7 +72,11 @@ func New(disk *storage.Disk, store *db.DB, login *auth.Auth, downloads *download
 	crossOrigin.SetDenyHandler(s.handle(func(http.ResponseWriter, *http.Request) error {
 		return fail(http.StatusForbidden, "Cross-site request blocked")
 	}))
-	return crossOrigin.Handler(login.Require(mux))
+	guarded := crossOrigin.Handler(login.Require(mux))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Frame-Options", "DENY") // no other page, a sibling app's included, may frame this one
+		guarded.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {

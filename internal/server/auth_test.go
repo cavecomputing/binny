@@ -181,3 +181,18 @@ func TestCrossSiteWritesAreBlocked(t *testing.T) {
 		t.Fatalf("GET / after the refused sign-outs answered %d, want 200", code)
 	}
 }
+
+// SameSite=Lax keeps the session out of frames on other sites, but a page on the same site (another
+// app on this host) could still frame the signed-in app and click through it.
+func TestNoPageCanBeFramed(t *testing.T) {
+	a := newApp(t)
+	for _, target := range []string{"/", "/login", "/static/css/style.css", "/api/list", "/files/missing"} {
+		if got := a.do("GET", target, nil).Header().Get("X-Frame-Options"); got != "DENY" {
+			t.Errorf("GET %s sent X-Frame-Options %q, want DENY", target, got)
+		}
+	}
+	a.cookie = ""
+	if got := a.do("GET", "/", nil).Header().Get("X-Frame-Options"); got != "DENY" {
+		t.Errorf("the redirect to the sign-in page sent X-Frame-Options %q, want DENY", got)
+	}
+}
