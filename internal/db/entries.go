@@ -151,6 +151,11 @@ func (tx *Tx) scan(folder string) (map[string]entry, error) {
 	for _, child := range children {
 		name, path := child.Name(), storage.Child(folder, child.Name())
 		info, err := child.Info()
+		if err == nil && child.IsDir() {
+			// The folder's own times: Windows lists a folder's times as its parent last saw
+			// them, which can lag behind a change inside it.
+			info, err = tx.disk.Lstat(path)
+		}
 		if err != nil || !utf8.ValidString(name) {
 			continue
 		}
