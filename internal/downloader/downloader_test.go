@@ -32,6 +32,7 @@ var remoteRoutes = map[string]remoteRoute{
 	"/moved":           {302, map[string]string{"Location": "/files/notes.txt"}, ""},
 	"/to-disk":         {302, map[string]string{"Location": "file:///etc/passwd"}, ""},
 	"/to-ftp":          {301, map[string]string{"Location": "ftp://127.0.0.1/file"}, ""},
+	"/data.json.gz":    {200, map[string]string{"Content-Encoding": "gzip"}, "\x1f\x8b as it was sent"},
 }
 
 // newRemote is the far end of a download: each path answers the way a test needs, and /slow
@@ -200,6 +201,14 @@ func TestTheNameItIsSavedAs(t *testing.T) {
 				t.Fatalf("data/files/ holds %q, want [%s]", got, tt.name)
 			}
 		})
+	}
+}
+
+func TestTheFileIsSavedByteForByte(t *testing.T) {
+	m := newManager(t)
+	job := m.download(t, newRemote(t)+"/data.json.gz", "")
+	if got, _ := os.ReadFile(filepath.Join(m.files, "data.json.gz")); job.State != "done" || string(got) != remoteRoutes["/data.json.gz"].body {
+		t.Fatalf("got %+v holding %q, want the gzip bytes as sent", job, got)
 	}
 }
 

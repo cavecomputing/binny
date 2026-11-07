@@ -79,6 +79,7 @@ func New(disk *storage.Disk, store *db.DB) *Manager {
 	transport.DialContext = (&net.Dialer{Timeout: timeout}).DialContext
 	transport.TLSHandshakeTimeout = timeout
 	transport.ResponseHeaderTimeout = timeout
+	transport.DisableCompression = true
 	return &Manager{
 		disk: disk,
 		db:   store,
