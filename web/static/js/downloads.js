@@ -1,6 +1,6 @@
 /**
  * Upload from link: the + button's menu, and the downloads panel, which hands a link to the server
- * and follows its downloads. The server does the downloading (downloader.py), so the page only
+ * and follows its downloads. The server does the downloading (internal/downloader), so the page only
  * polls the list: once a second while the panel is open or something is downloading.
  */
 import * as api from './api.js';

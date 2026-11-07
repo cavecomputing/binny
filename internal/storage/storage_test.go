@@ -44,7 +44,7 @@ func wantInvalidPath(t *testing.T, err error, message string) {
 }
 
 func TestCleanPathRefusesParentsHiddenNamesAndJunk(t *testing.T) {
-	// Python's None and 5 have no Go equivalent; invalid UTF-8 is the junk a string can carry.
+	// Invalid UTF-8 is the junk a string can carry.
 	for _, path := range []string{"..", "a/../..", ".trash", "a/.trash/b", ".binny-1.part", "a\x00b", "a\xffb"} {
 		t.Run(path, func(t *testing.T) {
 			got, err := CleanPath(path)
