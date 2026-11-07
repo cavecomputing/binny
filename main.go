@@ -6,14 +6,17 @@ package main
 
 import (
 	"cmp"
+	_ "embed"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cavecomputing/binny/internal/auth"
@@ -24,10 +27,22 @@ import (
 	"github.com/cavecomputing/binny/web"
 )
 
+// version is the release this is, from the VERSION file; setting it there and pushing to main
+// releases it (.github/workflows/tag.yml).
+//
+//go:embed VERSION
+var version string
+
 func main() {
 	host := flag.String("host", "127.0.0.1", "the address to listen on")
 	port := flag.Int("port", 5000, "the port to listen on")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+	version = strings.TrimSpace(version)
+	if *showVersion {
+		fmt.Println("binny", version)
+		return
+	}
 	if err := run(net.JoinHostPort(*host, strconv.Itoa(*port))); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -39,7 +54,7 @@ func run(addr string) error {
 	if err != nil {
 		return err
 	}
-	slog.Info("Binny is listening on http://" + addr)
+	slog.Info("Binny " + version + " is listening on http://" + addr)
 	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 30 * time.Second}
 	return srv.ListenAndServe()
 }

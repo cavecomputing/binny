@@ -34,8 +34,17 @@ the tags and what's in the trash.
 
 ## Quick start
 
-All you need is Git and [Go](https://go.dev/dl/) 1.27 or later. Binny builds into one file, `binny`,
-with the page and everything it needs inside it.
+Binny is one file, `binny` (`binny.exe` on Windows), with the page and everything it needs inside
+it. Download it for Linux or Windows from the [latest release](https://github.com/cavecomputing/binny/releases/latest),
+unpack it and run it with a password:
+
+```bash
+BINNY_PASSWORD=pick-one ./binny
+```
+
+On Windows, in PowerShell: `$env:BINNY_PASSWORD="pick-one"; .\binny.exe`.
+
+To build it yourself instead, all you need is Git and [Go](https://go.dev/dl/) 1.27 or later:
 
 ```bash
 git clone https://github.com/cavecomputing/binny.git
@@ -61,14 +70,9 @@ Caddy in front of it (`reverse_proxy 127.0.0.1:5000`) and keep it on your LAN or
 
 ## Updating
 
-Back up `data/`, stop Binny, then run:
-
-```bash
-git pull
-go build
-```
-
-and start it again with the same password. With Docker, run `git pull`, then the same
+Back up `data/`, stop Binny, replace `binny` with the one from the new release (or run `git pull`
+and `go build`), and start it again with the same password. `binny -version` says which one you
+have. With Docker, run `git pull`, then the same
 `docker compose` command as above, which rebuilds and restarts it. Restarting cuts short any
 upload from link still in progress, so let those finish first.
 

@@ -1,0 +1,70 @@
+# Builds Binny for Linux (x86-64 and ARM64) and Windows (x86-64) for a version tag (v1.2.3, or
+# v1.2.3-beta.1 for a pre-release) and posts the builds on a GitHub Release named for the tag.
+# tag.yml calls it after tagging a new VERSION pushed to main; pushing a tag by hand still works:
+# `git tag v0.2.0 && git push origin v0.2.0`. Go cross-compiles without cgo, so one Linux runner
+# builds all three.
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+env:
+  # The tag being released: tag.yml's when it calls, else the one pushed.
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  # The tests on Linux and Windows (ci.yml) before anything is built.
+  check:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Build
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          # A tag that doesn't match VERSION would post builds that report the wrong version.
+          if [ "$TAG" != "v$version" ]; then
+            echo "Tag $TAG doesn't match version $version in VERSION" >&2
+            exit 1
+          fi
+          mkdir dist
+          for target in linux/amd64/x86_64 linux/arm64/arm64 windows/amd64/x86_64; do
+            IFS=/ read -r goos goarch arch <<< "$target"
+            name="binny-$version-$goos-$arch"
+            exe=$([ "$goos" = windows ] && echo .exe || true)
+            mkdir "$name"
+            CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -ldflags="-s -w" -o "$name/binny$exe" .
+            cp README.md "$name/"
+            if [ "$goos" = windows ]; then
+              zip -qr "dist/$name.zip" "$name"
+            else
+              # tar keeps the binary's executable bit, which a zip would lose.
+              tar -czf "dist/$name.tar.gz" "$name"
+            fi
+          done
+      # The notes list the commits and pull requests since the last release. A tag with a suffix
+      # (v1.2.3-beta.1) is marked a pre-release, so it isn't offered as the latest.
+      - name: Release
+        run: |
+          prerelease=$([[ "$TAG" == *-* ]] && echo --prerelease || true)
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes $prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}

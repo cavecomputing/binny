@@ -3,7 +3,7 @@
 FROM golang:1.27.3-trixie AS build
 
 WORKDIR /src
-COPY go.mod go.sum main.go ./
+COPY go.mod go.sum main.go VERSION ./
 COPY internal/ internal/
 COPY web/ web/
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \

@@ -109,7 +109,8 @@ buries the real diff under noise.
 ## Run / test
 
 Go backend, vanilla-JS frontend with no build step: SQLite, one binary, Docker. It runs on Linux
-and Windows, so code that touches the system has to build and pass its tests on both.
+and Windows, so code that touches the system has to build and pass its tests on both (CI runs them
+on each).
 
 ```bash
 BINNY_PASSWORD=dev go run .                    # dev server on 127.0.0.1:5000 (-host / -port to change)
@@ -135,6 +136,19 @@ together. Dependencies are in `go.mod` and `go.sum`: change them with `go get` a
 and commit both files together. The only one is `modernc.org/sqlite`, a SQLite that needs no cgo,
 so the binary builds anywhere with `CGO_ENABLED=0`.
 
+### Releases
+
+Versions follow semantic versioning (`1.2.3`), and `VERSION` holds the current one (`binny -version`
+prints it, and the startup log names it). Only Matt decides when to release, so never change
+`VERSION` or make a tag or release unless he asks. A release is: set `VERSION`, commit and push to
+`main`. [tag.yml](.github/workflows/tag.yml) sees the new version, tags the commit `v1.2.3`
+(unless that tag exists) and calls [release.yml](.github/workflows/release.yml) (a tag a workflow
+pushes starts no other workflow by itself; pushing a tag by hand still starts it). That runs CI on
+Linux and Windows, refuses a tag that doesn't match `VERSION`, and posts Linux (x86-64, ARM64) and
+Windows (x86-64) builds on a GitHub Release. A tag with a suffix (`v1.2.3-beta.1`) becomes a
+pre-release. [ci.yml](.github/workflows/ci.yml) runs `go vet` and `go test -race` on Linux and
+Windows, and the `gofmt` check, on every push that changes more than Markdown or screenshots.
+
 ### How much verification a change needs
 
 Run the tests that cover what was touched, and the full suite before anything the user is likely to
@@ -157,7 +171,7 @@ packages need it) rather than growing a neighbour. Packages depend downwards onl
 
 | Path | Owns |
 |---|---|
-| `main.go` | Entry point: reads `BINNY_DATA_DIR`, `BINNY_PASSWORD` and the `-host`/`-port` flags, opens the disk and the database, starts the startup scan of `data/files/` in a goroutine, and serves. No logic lives here. |
+| `main.go` | Entry point: reads `BINNY_DATA_DIR`, `BINNY_PASSWORD` and the `-host`/`-port`/`-version` flags (the version is `VERSION`, embedded), opens the disk and the database, starts the startup scan of `data/files/` in a goroutine, and serves. No logic lives here. |
 | `internal/storage/` | The one way to the files: `Disk`, an `os.Root` on `data/files/`, so no path leads out of it (`Plain()` for what counts as an item — a file or folder, never a symlink, pipe or device — `IsFolder()`, `FreeName()` for "name (1).ext" under `NameLock`, `MakeFolders()`, `Usage()`, the one part written for each system: `usage_unix.go`, `usage_windows.go`); the rules for client paths and names (`CleanPath()`, `CheckName()`, `Numbered()`, `PartialName()` for the hidden file a new file is written to); kinds and content types by extension (`KindOf()`, `ContentType()`); and `Problem()`, what the system said went wrong. |
 | `internal/db/` | `binny.db`: the schema (`Open()`, idempotent) and one `*sql.DB`; `Update()` runs a function in a transaction, and `DB` and `Tx` share the query methods. `entries.go` is Binny's index of the disk (`Refresh()` on every listing, `IndexTree()` on start, `Record()` for what the app adds, `MoveRows()` for renames and moves, `FolderTotals()`, `List()`); its scans delete partial files left behind. `tags.go` is the tags (`CleanTag()`, `Tags()`, `MoveTags()` and `DropTags()`, which keep tags with an item through renames, moves and the trash, renaming or deleting a tag everywhere, and `Search()`), `trash.go` the trash records, `folders.go` the sidebar's tree. |
 | `internal/auth/` | The login: the sign-in and sign-out handlers, `Require()` in front of everything else, and the signed session cookie. |
@@ -172,6 +186,7 @@ packages need it) rather than growing a neighbour. Packages depend downwards onl
 | `*_test.go` | Beside the code they test, one per file or concern; `internal/server/server_test.go` has the helpers. `e2e_test.go` at the root drives the whole app over real HTTP through `main.go`'s `open()`. |
 | `docker/` | `Dockerfile` (the binary built in `golang`, run in `debian:trixie-slim`), `compose.yml` and `entrypoint.sh`, as in imgy: port 5000, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
 | `assets/` | The README's screenshots. |
+| `.github/workflows/` | CI and releases (see Releases above). |
 
 Fill in the "Owns" column with real names as code lands, and add the rules the code can't tell
 you on its own under it:
