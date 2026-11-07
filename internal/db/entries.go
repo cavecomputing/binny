@@ -68,7 +68,8 @@ func (db *DB) walk(folder string, everything bool) error {
 		err := db.Update(func(tx *Tx) error {
 			changed, err := tx.sync(current)
 			if everything && err == nil {
-				rows, err := tx.q.Query(`SELECT path FROM entries WHERE parent = ? AND is_dir`, current)
+				var rows *sql.Rows
+				rows, err = tx.q.Query(`SELECT path FROM entries WHERE parent = ? AND is_dir`, current)
 				changed, err = collect(rows, err, scanString)
 			}
 			pending = append(pending, changed...)
