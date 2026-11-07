@@ -138,6 +138,14 @@ func (a *app) listing(folder string) map[string]db.Item {
 	return items
 }
 
+// itemCount is how many items a listed folder has, -1 when the listing gave no count.
+func itemCount(item db.Item) int {
+	if item.Items == nil {
+		return -1
+	}
+	return *item.Items
+}
+
 // write puts content at rel under data/files/ straight on disk, making its folders.
 func (a *app) write(rel, content string) {
 	a.t.Helper()

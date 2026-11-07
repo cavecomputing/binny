@@ -35,25 +35,34 @@ func main() {
 }
 
 func run(addr string) error {
-	password := os.Getenv("BINNY_PASSWORD")
-	if password == "" {
-		return errors.New("set BINNY_PASSWORD to the password that signs devices in")
-	}
-	dataDir := cmp.Or(os.Getenv("BINNY_DATA_DIR"), "data")
-	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o777); err != nil {
+	handler, err := open(cmp.Or(os.Getenv("BINNY_DATA_DIR"), "data"), os.Getenv("BINNY_PASSWORD"))
+	if err != nil {
 		return err
+	}
+	slog.Info("Binny is listening on http://" + addr)
+	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 30 * time.Second}
+	return srv.ListenAndServe()
+}
+
+// open is Binny on dataDir as one handler, signing devices in with password.
+func open(dataDir, password string) (http.Handler, error) {
+	if password == "" {
+		return nil, errors.New("set BINNY_PASSWORD to the password that signs devices in")
+	}
+	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o777); err != nil {
+		return nil, err
 	}
 	disk, err := storage.OpenDisk(filepath.Join(dataDir, "files"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	store, err := db.Open(filepath.Join(dataDir, "binny.db"), disk)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	secret, err := store.SecretKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// The startup scan runs in the background, so a big library doesn't hold up the first page.
 	go func() {
@@ -63,10 +72,6 @@ func run(addr string) error {
 		}
 		slog.Info("Indexed data/files/")
 	}()
-
 	login := auth.New(secret, password, web.Page("login.html"))
-	handler := server.New(disk, store, login, downloader.New(disk, store))
-	slog.Info("Binny is listening on http://" + addr)
-	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 30 * time.Second}
-	return srv.ListenAndServe()
+	return server.New(disk, store, login, downloader.New(disk, store)), nil
 }
