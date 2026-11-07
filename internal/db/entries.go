@@ -24,7 +24,7 @@ type Item struct {
 	Size  int64    `json:"size"` // a folder's counts everything below it
 	Mtime float64  `json:"mtime"`
 	Kind  string   `json:"kind"`
-	Items int      `json:"items,omitempty"` // in a folder, directly
+	Items *int     `json:"items,omitempty"` // a folder's, directly inside it
 	Tags  []string `json:"tags"`
 }
 
@@ -243,9 +243,11 @@ func (c conn) items(query string, args ...any) ([]Item, error) {
 	paths := make([]string, len(items))
 	for i := range items {
 		if items[i].IsDir {
-			if items[i].Items, items[i].Size, err = c.FolderTotals(items[i].Path); err != nil {
+			count, size, err := c.FolderTotals(items[i].Path)
+			if err != nil {
 				return nil, err
 			}
+			items[i].Items, items[i].Size = &count, size
 		}
 		paths[i] = items[i].Path
 	}
