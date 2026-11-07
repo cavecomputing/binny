@@ -188,7 +188,7 @@ mark { background: none; color: var(--accent); font-weight: 600; }
 .navrow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav .count { flex: none; margin-left: auto; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .nav button.navrow { width: 100%; border: 0; background: none; text-align: left; }
-.tree-row { display: flex; align-items: center; padding-left: calc(var(--depth) * 16px); }
+.tree-row { display: flex; align-items: center; gap: 4px; padding-left: calc(var(--depth) * 16px); }
 .tree-row .navrow { flex: 1; padding-left: 4px; }
 .twisty { flex: none; display: grid; place-items: center; width: 22px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--faint); }
 button.twisty:hover { background: var(--raised); color: var(--text); }
