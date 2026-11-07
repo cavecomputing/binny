@@ -228,6 +228,31 @@ func TestThingsPutInTheTrashByHandShowAndRestoreToTheTop(t *testing.T) {
 	}
 }
 
+// "<digits>_<name>" reads as trashed through the app, but a name Binny won't accept in a folder
+// (".hidden" would restore out of sight, ".." out of the folder) is no original name at all.
+func TestAHandMadeTrashNameThatLooksTrashedButIsntRestoresAsItIs(t *testing.T) {
+	a := newApp(t)
+	if err := os.Mkdir(trashFolder(a), 0o777); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"1_.hidden", "2_..", "3_.trash", "4_"} {
+		if err := os.WriteFile(filepath.Join(trashFolder(a), name), []byte("hi"), 0o666); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, item := range a.trashItems() {
+		if item.Original != item.Name {
+			t.Errorf("%q is listed as coming from %q, want its own name", item.Name, item.Original)
+		}
+		if response := a.do("POST", "/api/trash/restore", map[string][]string{"names": {item.Name}}); response.Code != http.StatusOK {
+			t.Errorf("restoring %q answered %d: %s", item.Name, response.Code, response.Body)
+		}
+	}
+	if got := names(t, a.files); !slices.Equal(got, []string{".trash", "1_.hidden", "2_..", "3_.trash", "4_"}) {
+		t.Errorf("after restoring, the top folder lists %q", got)
+	}
+}
+
 // Restoring it would put a symlink, which listings hide, back among the files.
 func TestASymlinkPutInTheTrashByHandIsHidden(t *testing.T) {
 	a := newApp(t)

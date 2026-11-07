@@ -42,11 +42,12 @@ func (s *Server) trashEntries() ([]fs.DirEntry, error) {
 }
 
 // splitTrashName is when an item was trashed and its original name, from "<time_ns>_<name>"; a
-// name not like that wasn't trashed through the app.
+// name not like that, or whose original Binny wouldn't accept (".hidden" would restore out of
+// sight, ".." out of the folder), wasn't trashed through the app.
 func splitTrashName(name string) (trashedAt float64, original string) {
 	stamp, original, found := strings.Cut(name, "_")
 	ns, err := strconv.ParseUint(stamp, 10, 64)
-	if !found || err != nil || original == "" {
+	if _, invalid := storage.CheckName(original); !found || err != nil || invalid != nil {
 		return 0, name
 	}
 	return float64(ns) / 1e9, original
