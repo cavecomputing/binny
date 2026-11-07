@@ -292,6 +292,15 @@ func TestEmptyRemovesEverything(t *testing.T) {
 	}
 }
 
+func TestAFileWhereTheTrashGoesIsNamedInTheError(t *testing.T) {
+	a := newApp(t)
+	a.write(".trash", "not a folder")
+	a.write("g.txt", "g")
+	if got := jsonOf(t, a.do("POST", "/api/trash", map[string]any{"paths": []string{"g.txt"}})); !strings.Contains(got, `\".trash\"`) {
+		t.Errorf("trashing answered %s, want an error naming .trash", got)
+	}
+}
+
 func TestTheTopFolderAndTheTrashItselfCantBeTrashed(t *testing.T) {
 	a := newApp(t)
 	if err := os.Mkdir(trashFolder(a), 0o777); err != nil {

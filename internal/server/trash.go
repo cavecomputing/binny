@@ -115,7 +115,7 @@ func (s *Server) trash(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := s.disk.Mkdir(trashDir, 0o777); err != nil && !errors.Is(err, fs.ErrExist) {
+	if err := s.disk.Mkdir(trashDir, 0o777); err != nil && (!errors.Is(err, fs.ErrExist) || !s.disk.IsFolder(trashDir)) {
 		return err
 	}
 	names := []string{}
