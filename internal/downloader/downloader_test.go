@@ -358,6 +358,8 @@ func TestParseURL(t *testing.T) {
 		{"https://example.com/my notes.txt", "https://example.com/my%20notes.txt"},
 		{"  https://example.com/a%20b.txt?q=x y  ", "https://example.com/a%20b.txt?q=x%20y"},
 		{"https://example.com/a.iso#part", "https://example.com/a.iso"},
+		{"https://example.com/100%.txt", "https://example.com/100%25.txt"},
+		{"https://example.com/q%41%zz", "https://example.com/q%41%25zz"},
 	} {
 		got, err := ParseURL(tt.link)
 		if err != nil || got != tt.want {

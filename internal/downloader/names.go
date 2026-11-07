@@ -14,11 +14,15 @@ import (
 )
 
 // ParseURL checks the link the client sent: http or https, with a host and no user name or
-// password. Spaces and other characters a browser would escape are escaped.
+// password. Spaces, a "%" that starts no escape, and other characters a browser would escape are
+// escaped.
 func ParseURL(link string) (string, error) {
 	var escaped strings.Builder
-	for _, b := range []byte(strings.TrimSpace(link)) {
-		if b <= ' ' || b >= 0x7f {
+	link = strings.TrimSpace(link)
+	for i := 0; i < len(link); i++ {
+		b := link[i]
+		lonePercent := b == '%' && (i+2 >= len(link) || !isHex(link[i+1]) || !isHex(link[i+2]))
+		if b <= ' ' || b >= 0x7f || lonePercent {
 			fmt.Fprintf(&escaped, "%%%02X", b) // %-escapes already there stay as they are
 		} else {
 			escaped.WriteByte(b)
@@ -34,6 +38,8 @@ func ParseURL(link string) (string, error) {
 	u.Fragment, u.RawFragment = "", ""
 	return u.String(), nil
 }
+
+func isHex(c byte) bool { return strings.IndexByte("0123456789abcdefABCDEF", c) >= 0 }
 
 func validPort(port string) bool {
 	if port == "" {
