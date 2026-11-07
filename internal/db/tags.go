@@ -195,10 +195,13 @@ func (c conn) Search(include, exclude []string, name string, limit int) (items [
 	return items, truncated, err
 }
 
+var caseFold = strings.NewReplacer("i\u0307", "i", "ς", "σ")
+
 // Words is text as a name search compares it: lowercase, with runs of spaces, "_" and "-" as one
-// space.
+// space. The page lowercases a query with JavaScript, which turns "İ" into "i̇" and a final "Σ"
+// into "ς" where Go gives "i" and "σ", so both sides are folded to Go's.
 func Words(text string) string {
-	return strings.Join(strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+	return strings.Join(strings.FieldsFunc(caseFold.Replace(strings.ToLower(text)), func(r rune) bool {
 		return unicode.IsSpace(r) || r == '_' || r == '-'
 	}), " ")
 }

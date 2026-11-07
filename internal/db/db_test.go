@@ -43,6 +43,10 @@ func TestWords(t *testing.T) {
 		{"a_-_b", "a b"},
 		{"  Beach__House  ", "beach house"}, // a search's name is trimmed too
 		{"beachhouse.TXT", "beachhouse.txt"},
+		{"İstanbul", "istanbul"},
+		{"i\u0307stanbul", "istanbul"}, // "İstanbul" lowercased by the page
+		{"ΟΔΟΣ ΚΑΛΟΣ", "οδοσ καλοσ"},
+		{"οδος", "οδοσ"},
 	} {
 		if got := Words(c.in); got != c.want {
 			t.Errorf("Words(%q) = %q, want %q", c.in, got, c.want)
