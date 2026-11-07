@@ -24,10 +24,11 @@ import (
 func TestEndToEnd(t *testing.T) {
 	dataDir := t.TempDir()
 	e2eWrite(t, filepath.Join(dataDir, "files", "seeded", "inner.md"), "abc") // there before it starts
-	handler, err := open(dataDir, "dev")
+	handler, closeData, err := open(dataDir, "dev")
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(closeData) // after the server below closes, before the data directory goes
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

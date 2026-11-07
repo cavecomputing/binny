@@ -50,34 +50,36 @@ func main() {
 }
 
 func run(addr string) error {
-	handler, err := open(cmp.Or(os.Getenv("BINNY_DATA_DIR"), "data"), os.Getenv("BINNY_PASSWORD"))
+	handler, closeData, err := open(cmp.Or(os.Getenv("BINNY_DATA_DIR"), "data"), os.Getenv("BINNY_PASSWORD"))
 	if err != nil {
 		return err
 	}
+	defer closeData()
 	slog.Info("Binny " + version + " is listening on http://" + addr)
 	srv := &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 30 * time.Second}
 	return srv.ListenAndServe()
 }
 
-// open is Binny on dataDir as one handler, signing devices in with password.
-func open(dataDir, password string) (http.Handler, error) {
+// open is Binny on dataDir as one handler, signing devices in with password, and what closes the
+// files and the database it holds open.
+func open(dataDir, password string) (http.Handler, func(), error) {
 	if password == "" {
-		return nil, errors.New("set BINNY_PASSWORD to the password that signs devices in")
+		return nil, nil, errors.New("set BINNY_PASSWORD to the password that signs devices in")
 	}
 	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o777); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	disk, err := storage.OpenDisk(filepath.Join(dataDir, "files"))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	store, err := db.Open(filepath.Join(dataDir, "binny.db"), disk)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	secret, err := store.SecretKey()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// The startup scan runs in the background, so a big library doesn't hold up the first page.
 	go func() {
@@ -88,5 +90,6 @@ func open(dataDir, password string) (http.Handler, error) {
 		slog.Info("Indexed data/files/")
 	}()
 	login := auth.New(secret, password, web.Page("login.html"))
-	return server.New(disk, store, login, downloader.New(disk, store)), nil
+	closeData := func() { store.Close(); disk.Close() }
+	return server.New(disk, store, login, downloader.New(disk, store)), closeData, nil
 }
