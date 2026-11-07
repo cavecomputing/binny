@@ -217,7 +217,7 @@ func (c conn) FolderTotals(path string) (count int, size int64, err error) {
 	if path == "" {
 		err = c.q.QueryRow(`SELECT COALESCE(SUM(size), 0) FROM entries`).Scan(&size)
 	} else {
-		err = c.q.QueryRow(`SELECT COALESCE(SUM(size), 0) FROM entries WHERE path > ? AND path < ?`, path+"/", path+"0").Scan(&size)
+		err = c.q.QueryRow(`SELECT COALESCE(SUM(size), 0) FROM entries WHERE `+inSubtree, subtree(path)...).Scan(&size)
 	}
 	return count, size, err
 }
