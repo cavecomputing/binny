@@ -106,7 +106,7 @@ func (m *Manager) Start(link, folder string, tags []string) Status {
 	ctx, cancel := context.WithCancel(context.Background())
 	id := make([]byte, 16)
 	rand.Read(id)
-	j := &job{Status: Status{ID: hex.EncodeToString(id), URL: link, Folder: folder, Name: nameInURL(u), State: "queued"},
+	j := &job{ID: hex.EncodeToString(id), URL: link, Folder: folder, Name: nameInURL(u), State: "queued",
 		tags: tags, ctx: ctx, cancel: cancel}
 	m.mu.Lock()
 	m.jobs = append(m.jobs, j)

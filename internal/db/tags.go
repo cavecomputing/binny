@@ -158,10 +158,11 @@ func (c conn) tagged(tag string) (count int, found bool, err error) {
 // them; truncated says there were more.
 func (c conn) Search(include, exclude []string, name string, limit int) (items []Item, truncated bool, err error) {
 	// Joins on the included tags let SQLite start from the tag index; the rest filter what's left.
-	query := `SELECT entries.path FROM entries`
+	var query strings.Builder
+	query.WriteString(`SELECT entries.path FROM entries`)
 	var args []any
 	for i, tag := range include {
-		query += fmt.Sprintf(` JOIN tags AS t%d ON t%d.path = entries.path AND t%d.tag = ?`, i, i, i)
+		fmt.Fprintf(&query, ` JOIN tags AS t%d ON t%d.path = entries.path AND t%d.tag = ?`, i, i, i)
 		args = append(args, tag)
 	}
 	var where []string
@@ -170,9 +171,9 @@ func (c conn) Search(include, exclude []string, name string, limit int) (items [
 		args = append(args, tag)
 	}
 	if where != nil {
-		query += ` WHERE ` + strings.Join(where, ` AND `)
+		query.WriteString(` WHERE ` + strings.Join(where, ` AND `))
 	}
-	rows, err := c.q.Query(query+` ORDER BY entries.is_dir DESC, entries.path`, args...)
+	rows, err := c.q.Query(query.String()+` ORDER BY entries.is_dir DESC, entries.path`, args...)
 	if err != nil {
 		return nil, false, err
 	}
