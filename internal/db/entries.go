@@ -198,7 +198,7 @@ func (c conn) MoveRows(old, new string) error {
 	if err := c.Forget(new); err != nil {
 		return err
 	}
-	start := len(old) + 1
+	start := utf8.RuneCountInString(old) + 1
 	_, err := c.q.Exec(`UPDATE entries
 		SET parent = CASE WHEN path = ? THEN ? ELSE ? || substr(parent, ?) END,
 		    path = ? || substr(path, ?)

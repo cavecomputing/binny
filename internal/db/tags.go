@@ -83,7 +83,7 @@ func (c conn) MoveTags(old, new string) error {
 	if err := c.DropTags(new); err != nil {
 		return err
 	}
-	_, err := c.q.Exec(`UPDATE tags SET path = ? || substr(path, ?) WHERE `+inSubtree, append([]any{new, len(old) + 1}, subtree(old)...)...)
+	_, err := c.q.Exec(`UPDATE tags SET path = ? || substr(path, ?) WHERE `+inSubtree, append([]any{new, utf8.RuneCountInString(old) + 1}, subtree(old)...)...)
 	return err
 }
 

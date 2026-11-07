@@ -190,6 +190,21 @@ func TestTagsFollowRenamesAndMovesAllTheWayDown(t *testing.T) {
 	tagCheck(t, "search", tagSearch(a, url.Values{"tag": {"x"}}), []string{"archive/holiday", "archive/holiday/day/a.jpg"})
 }
 
+// SQLite's substr() counts characters, not bytes, so a name with an accent once shifted every
+// path below it.
+func TestTagsFollowAFolderWithAnAccentedName(t *testing.T) {
+	a := newApp(t)
+	a.upload("café/día/a.jpg", "hello", "")
+	tagChange(a, []string{"café/día/a.jpg"}, []string{"x"}, nil)
+	a.do("POST", "/api/rename", map[string]string{"path": "café", "name": "crème"})
+	tagCheck(t, "renamed", a.listing("crème/día")["a.jpg"].Tags, []string{"x"})
+	a.do("POST", "/api/folders", map[string]string{"parent": "", "name": "über"})
+	a.do("POST", "/api/move", map[string]any{"paths": []string{"crème"}, "to": "über"})
+	tagCheck(t, "moved", a.listing("über/crème/día")["a.jpg"].Tags, []string{"x"})
+	a.do("POST", "/api/trash/restore", map[string]any{"names": tagTrash(a, "über")})
+	tagCheck(t, "restored", tagSearch(a, url.Values{"tag": {"x"}}), []string{"über/crème/día/a.jpg"})
+}
+
 func TestTagsWaitInTheTrashAndComeBackOnRestore(t *testing.T) {
 	a := newApp(t)
 	a.upload("trip/a.jpg", "hello", "")
