@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/cavecomputing/binny/internal/storage"
@@ -70,12 +71,23 @@ func safeName(name string) string {
 
 func nameInURL(u *url.URL) string { return safeName(u.Path) }
 
+// looseFilename finds the filename in a Content-Disposition too sloppy for mime to parse, such as
+// an unquoted name with a space in it.
+var looseFilename = regexp.MustCompile(`(?i)(?:^|;)\s*filename\s*=\s*(?:"([^"]*)"|([^;]*))`)
+
 // nameFrom is the file's name: the server's Content-Disposition, else the end of the address it
 // ended at, with an extension from the Content-Type when that has none.
 func nameFrom(response *http.Response) string {
 	name := nameInURL(response.Request.URL)
-	if _, params, err := mime.ParseMediaType(response.Header.Get("Content-Disposition")); err == nil && params["filename"] != "" {
-		name = safeName(params["filename"])
+	disposition := response.Header.Get("Content-Disposition")
+	given := ""
+	if _, params, err := mime.ParseMediaType(disposition); err == nil {
+		given = params["filename"]
+	} else if match := looseFilename.FindStringSubmatch(disposition); match != nil {
+		given = strings.TrimSpace(match[1] + match[2])
+	}
+	if given != "" {
+		name = safeName(given)
 	}
 	contentType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
 	if path.Ext(name) == "" && err == nil && contentType != "application/octet-stream" {

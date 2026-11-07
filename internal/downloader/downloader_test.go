@@ -32,6 +32,7 @@ var remoteRoutes = map[string]remoteRoute{
 	"/moved":           {302, map[string]string{"Location": "/files/notes.txt"}, ""},
 	"/to-disk":         {302, map[string]string{"Location": "file:///etc/passwd"}, ""},
 	"/to-ftp":          {301, map[string]string{"Location": "ftp://127.0.0.1/file"}, ""},
+	"/get.php?id=5":    {200, map[string]string{"Content-Disposition": "attachment; filename=Annual Report.pdf"}, "%PDF"},
 	"/data.json.gz":    {200, map[string]string{"Content-Encoding": "gzip"}, "\x1f\x8b as it was sent"},
 }
 
@@ -185,11 +186,12 @@ func TestALinkDownloadsIntoTheFolderWithItsTags(t *testing.T) {
 
 func TestTheNameItIsSavedAs(t *testing.T) {
 	for _, tt := range []struct{ path, name string }{
-		{"/report", "résumé.pdf"},         // the server's name for it wins
-		{"/evil", "evil.sh"},              // but it can't pick a folder or hide the file
-		{"/picture", "picture.png"},       // no extension: one from the type
-		{"/moved", "notes.txt"},           // redirects are followed
-		{"/my notes.txt", "my notes.txt"}, // a space gets escaped on the way out, as a browser would
+		{"/report", "résumé.pdf"},              // the server's name for it wins
+		{"/evil", "evil.sh"},                   // but it can't pick a folder or hide the file
+		{"/picture", "picture.png"},            // no extension: one from the type
+		{"/moved", "notes.txt"},                // redirects are followed
+		{"/my notes.txt", "my notes.txt"},      // a space gets escaped on the way out, as a browser would
+		{"/get.php?id=5", "Annual Report.pdf"}, // an unquoted name with a space, as some scripts send
 	} {
 		t.Run(tt.path, func(t *testing.T) {
 			m := newManager(t)
