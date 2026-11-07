@@ -83,6 +83,31 @@ func TestMediaShowsInTheTab(t *testing.T) {
 	}
 }
 
+// A file replaced under the same name, even within the second, must not come from the cache.
+func TestAReplacedFileIsSentAgain(t *testing.T) {
+	a := newApp(t)
+	a.write("photo.jpg", "old")
+	first := a.do("GET", "/files/photo.jpg", nil)
+	if got := first.Header().Get("Cache-Control"); got != "no-cache" {
+		t.Errorf("Cache-Control = %q, want no-cache", got)
+	}
+	info, err := os.Stat(filepath.Join(a.files, "photo.jpg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.write("photo.jpg", "newer")
+	if err := os.Chtimes(filepath.Join(a.files, "photo.jpg"), info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	again := a.do("GET", "/files/photo.jpg", nil, "If-None-Match", first.Header().Get("ETag"), "If-Modified-Since", first.Header().Get("Last-Modified"))
+	if again.Code != http.StatusOK || again.Body.String() != "newer" {
+		t.Errorf("revalidating answered %d %q, want 200 \"newer\"", again.Code, again.Body)
+	}
+	if same := a.do("GET", "/files/photo.jpg", nil, "If-None-Match", again.Header().Get("ETag")); same.Code != http.StatusNotModified {
+		t.Errorf("revalidating unchanged answered %d, want 304", same.Code)
+	}
+}
+
 func TestDownloadParamForcesADownload(t *testing.T) {
 	a := newApp(t)
 	viewsStore(a)

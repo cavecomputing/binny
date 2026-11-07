@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"mime"
 	"net/http"
 	"strings"
@@ -59,6 +60,9 @@ func (s *Server) storedFile(w http.ResponseWriter, r *http.Request) error {
 	if contentType == "image/svg+xml" { // the one type shown in the tab that can carry script
 		w.Header().Set("Content-Security-Policy", "sandbox")
 	}
+	// Revalidate every time, by mtime and size, so a file replaced under the same name is sent again.
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("ETag", fmt.Sprintf(`"%x-%x"`, info.ModTime().UnixNano(), info.Size()))
 	http.ServeContent(w, r, name, info.ModTime(), file)
 	return nil
 }
