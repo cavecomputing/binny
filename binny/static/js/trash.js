@@ -116,7 +116,7 @@ function render() {
             </tr></thead>
             <tbody>${items.map(row).join('')}</tbody>
         </table>
-        <div class="cc-callout"><span class="cc-callout__label">Note</span><span>Things stay here until you empty the trash. Restoring puts them back where they were.</span></div>`
+        <div class="callout"><span class="callout__label">Note</span><span>Things stay here until you empty the trash. Restoring puts them back where they were.</span></div>`
         : `<div class="empty">${icon('trash')}<p>The trash is empty.</p></div>`;
     renderSelection();
 }

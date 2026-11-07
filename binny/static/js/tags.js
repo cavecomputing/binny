@@ -120,8 +120,8 @@ function renderNav() {
     const search = currentSearch();
     $('tagSection').hidden = !list.length;
     $('tagNav').innerHTML = list.slice(0, NAV_SIZE).map(({ tag, count }) => `
-        <a class="cc-shell__row" href="${esc(searchHash(tag))}"${search === tag ? ' aria-current="page"' : ''}>${icon('tag')}<span>${esc(tag)}</span><span class="count">${count.toLocaleString()}</span></a>`).join('')
-        + (list.length > NAV_SIZE ? `<button class="cc-shell__row" type="button" data-all-tags>${icon('search')}<span>All ${list.length.toLocaleString()} tags</span></button>` : '');
+        <a class="navrow" href="${esc(searchHash(tag))}"${search === tag ? ' aria-current="page"' : ''}>${icon('tag')}<span>${esc(tag)}</span><span class="count">${count.toLocaleString()}</span></a>`).join('')
+        + (list.length > NAV_SIZE ? `<button class="navrow" type="button" data-all-tags>${icon('search')}<span>All ${list.length.toLocaleString()} tags</span></button>` : '');
 }
 
 export function initTags() {

@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Binny is a small, single-user file hosting app for personal use: a file explorer in the browser with
 folders, uploads, downloads, moves, renames, tags and tag search, and a trash. It runs on the LAN or
-over Tailscale behind Caddy and is never exposed to the internet. Its look and its tag handling
-follow [imgy](https://github.com/cavecomputing/imgy).
+over Tailscale behind Caddy and is never exposed to the internet. Its tag handling follows
+[imgy](https://github.com/cavecomputing/imgy).
 
 The app is early — most of it does not exist yet — so sections marked _(open)_ record decisions
 still being made. Update them as they settle rather than working around them.
@@ -17,7 +17,7 @@ still being made. Update them as they settle rather than working around them.
   the exact path and moving up, and the file list for moving down. The sidebar is always shown
   beside the list, never collapsed, but its width is dragged at the handle on its edge (or set with the
   arrow keys, double-click to reset) and remembered per device; on phones it is a drawer (opened by the top bar's button, covering the whole window, closed by
-  its X), which also holds the theme switch and sign-out, as the top bar has no room for them there. Also on phones, the search
+  its X), which holds the brand, the theme switch and sign-out as the sidebar does on wider screens. Also on phones, the search
   box is a dock along the bottom (its suggestions open upward) so the top bar can keep the wordmark.
 - **Explorer:** nested folders; create, rename, move (drag-and-drop and a "move to" picker),
   upload (button and drag-and-drop, many files at once), download (single files; folders and
@@ -162,8 +162,8 @@ neighbour.
 | `binny/api/` | One Flask blueprint per resource, all under `/api`: `files` (list, upload, rename, move), `folders` (the sidebar's tree and counts, every folder for the download picker, new folder), `trash` (trash, restore, delete forever, empty), `tags` (tags in use, tagging, renaming or deleting a tag everywhere, and `/api/search`), `downloads` (start, list, cancel, clear the finished). `common.py` turns request arguments into checked paths and names or aborts with the message the UI shows. |
 | `binny/templates/` | `base.html` (head, the theme script, the icon sprite), `login.html`, `index.html` (the app shell). |
 | `binny/static/js/` | ES modules, one per concern, entry `main.js` loaded with `<script type="module">`: `api.js`, `ui.js` (escaping, formatting, the toast, the question dialog), `paths.js`, `state.js`, `selection.js` (click, Ctrl- and Shift-click and keyboard selection for any table), `explorer.js` (breadcrumb and file table, or a search's results), `trash.js` (trashing with undo, and the trash view), `rowmenu.js` (the "…" menu at the end of each row, in the file list and the trash: a row's actions behind one button so a long name keeps its room), `sidebar.js` (folder tree, and the handle that sets its width), `tags.js` (the tags in use, the tag syntax the search box and the tag editor share, the sidebar's Tags), `search.js` (the search box), `tagger.js` (the tag editor), `upload.js`, `downloads.js` (the "+" button's menu and the downloads panel), `move.js`, `drop.js` (all drag and drop), `shortcuts.js`, `theme.js`. |
-| `binny/static/` | Also `manifest.webmanifest` and the `icon-*.png` and `apple-touch-icon.png` it and `base.html` name, which make Binny installable as an app (standalone display, so `style.css` drops the frame's gap, border and corners there). They are the favicon's folder rendered at those sizes (the maskable one smaller, for its safe zone); redo them with it. |
-| `binny/static/css/` | `cavecomputing.css` (the design system's `bundle.css`, copied unchanged) and `style.css` (the tokens and Binny's own layout). |
+| `binny/static/` | Also `manifest.webmanifest` and the `icon-*.png` and `apple-touch-icon.png` it and `base.html` name, which make Binny installable as an app (standalone display; the page fills the window edge to edge everywhere, so it needs nothing special there). They are the favicon's folder rendered at those sizes (the maskable one smaller, for its safe zone); redo them with it. |
+| `binny/static/css/` | `style.css`: the tokens, the shared components and every view's layout. |
 | `tests/` | pytest, one file per blueprint or module. |
 | `docker/` | `Dockerfile`, `compose.yml` and `entrypoint.sh`, as in imgy: gunicorn with one gthread worker on port 5000, and `/data` handed to `PUID`:`PGID` (`setpriv`, so no apt layer). |
 | `assets/` | The README's screenshots. |
@@ -188,16 +188,19 @@ you on its own under it:
 - Folders are addressed by the hash (`#/photos/2026`, the trash is `#trash`, a search is
   `#search/<query>`), so back, forward and reload work and any of them can be bookmarked. A search
   keeps `state.folder`, so uploads and new folders still go where it started.
-- The look is the **cavecomputing design system**
-  ([reference](https://claude.ai/artifact/TAYcpHgxU55sLKKU2sYeRv): read its `project/README.md`,
-  `project/tokens.json` and `project/components/bundle.css`). Copy its tokens and its `bundle.css`
-  unchanged into `binny/static/css/` and build on the `cc-*` components (`cc-shell`, `cc-btn`,
-  `cc-tag`, `cc-badge`, `cc-callout`, `cc-card-header`, `cc-input`, …) before writing new ones.
-  Change the design system, not the copy.
-- Colors come from its tokens; never hardcode them. Accents keep one meaning: yellow
-  (`accent-text`) for focus, selection and active rows; green (`accent-alt`) for section icons;
-  aqua for done; blue (`accent-cool`) for paths and links; orange (`accent-warm`) for anything
-  destructive. There is no red. No web fonts: system mono and sans only.
+- The look is Binny's own, quiet and plain: hairline borders, roomy rows, one teal accent. It no
+  longer uses the cavecomputing design system. Everything lives in `style.css`: the tokens on
+  `:root` (dark) and `[data-theme="light"]`, then a few shared components (`btn`, `icon-btn`,
+  `input`, `card`, `card-header`, `tag`, `chip`, `badge`, `callout`, `eyebrow`, `navrow`) that
+  every view builds on before writing new ones.
+- Colors come from the tokens; never hardcode them. Two have a meaning: `--accent` (teal) for
+  focus, selection, active rows, folders and the main action, and `--warm` for anything
+  destructive. There is no red. Everything else is `--text`, `--muted` or `--faint` on `--bg`,
+  `--panel`, `--raised` or `--overlay` (menus, the toast, the selection bar). No web fonts: Inter
+  where it's installed, else the system sans, and the system mono for keys and code.
+- On wide screens the sidebar holds the brand and, at its foot, Trash, the theme switch and
+  sign-out; the main column has the search and the "+" split button, then the path above the
+  folder's name as the title, and the selection bar floats over the bottom of the list. The checkboxes show on hover or once something is selected (always on touch).
 - **Dark is the default theme**, whatever the OS prefers. The choice lives in `localStorage`
   (`binny-theme`), so each device keeps its own; never sync it through the server. Apply it in a
   tiny inline script in `<head>` before the stylesheet paints, so a light-theme device doesn't
@@ -210,12 +213,11 @@ you on its own under it:
   width it looked small, and the favicon draws it 1.15× larger (stroke kept at 2.2) to cover as
   much of the tile as their glyphs do. Size a new glyph by the area it covers, not its width.
   [binny/static/favicon.svg](binny/static/favicon.svg) is the source and
-  `favicon.png` (256px) is rendered from it; change both together. The top-left brand is the same
-  folder icon beside the `cc-wordmark`, in the `--logo` token: that aqua in dark, `#2d766d` in
-  light.
-- The [interface mockup](https://claude.ai/artifact/7KsCx3jSnVbB6tydGm55db) is the reference for layout: the "+" split button (click uploads files;
-  the arrow opens "Upload from link"), folder and tag sidebar, file table with tag chips, trash
-  view, downloads panel, sign-in card.
+  `favicon.png` (256px) is rendered from it; change both together. In the page, the brand is
+  the sprite's folder in `--accent-ink` on an `--accent` tile, beside the `wordmark`.
+- The [interface mockup](https://claude.ai/artifact/XUjeUxP9dUYAQDFV9N6kXj) is the reference for
+  the look and layout: files, search, the tag editor, trash, sign-in, and the phone with its
+  drawer. The "+" split button uploads files on a click; its arrow opens "Upload from link".
 
 ### Files on disk are the user's data
 

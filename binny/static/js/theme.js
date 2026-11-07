@@ -1,8 +1,10 @@
 /** The theme switch. Dark is the default; each device remembers its own choice. */
 
-// The browser bar and an installed app's status bar take theme-color; match it to the shell's surface.
+import { $ } from './ui.js';
+
+// The browser bar and an installed app's status bar take theme-color; match it to the page.
 function syncThemeColor() {
-    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg-surface').trim();
+    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
 }
 
 function switchTheme() {
@@ -14,6 +16,5 @@ function switchTheme() {
 
 export function initTheme() {
     syncThemeColor();
-    // The top bar's button, and the drawer's on phones.
-    for (const button of document.querySelectorAll('#themeBtn, [data-switch-theme]')) button.addEventListener('click', switchTheme);
+    $('themeBtn').addEventListener('click', switchTheme);
 }

@@ -128,7 +128,7 @@ function heading(key, className = '') {
 
 /** The breadcrumb of the folder on screen; every crumb takes drops. */
 function folderCrumbs() {
-    const crumb = (path) => `<a href="${esc(folderHash(path))}" data-drop="${esc(path)}">${esc(path ? nameOf(path) : 'files')}</a>`;
+    const crumb = (path) => `<a href="${esc(folderHash(path))}" data-drop="${esc(path)}">${esc(path ? nameOf(path) : 'Files')}</a>`;
     return ['', ...ancestors(state.folder)].map(crumb).join('<span>/</span>');
 }
 
@@ -139,9 +139,9 @@ function searchCrumbs() {
         const query = formatQuery(change({ ...terms }));
         return esc(query ? searchHash(query) : folderHash(state.folder));
     };
-    const term = (label, text, href) => `<a class="cc-tag" href="${href}" title="Take this out of the search">${label ? `<b>${label}</b> ` : ''}${esc(text)}${icon('x')}</a>`;
+    const term = (label, text, href) => `<a class="tag" href="${href}" title="Take this out of the search">${label ? `<b>${label}</b> ` : ''}${esc(text)}${icon('x')}</a>`;
     return [
-        '<b class="crumbs__label">search</b>',
+        '<b class="crumbs__label">Search</b>',
         ...terms.tags.map((tag) => term('', tag, without((t) => ({ ...t, tags: t.tags.filter((x) => x !== tag) })))),
         ...terms.not.map((tag) => term('not', tag, without((t) => ({ ...t, not: t.not.filter((x) => x !== tag) })))),
         ...(terms.name ? [term('name', terms.name, without((t) => ({ ...t, name: '' })))] : []),

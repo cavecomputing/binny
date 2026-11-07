@@ -3,91 +3,87 @@
     <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
 {% block body %}
-<div class="cc-shell app" id="shell">
-    <header class="topbar" id="topbar">
-        <button class="icon-btn" id="sideBtn" type="button" title="Menu" aria-label="Open the sidebar"><svg class="i"><use href="#i-panel"/></svg></button>
-        <span class="brand"><svg class="logo"><use href="#i-folder"/></svg><span class="cc-wordmark">binny</span></span>
-        <div class="search" id="searchBox">
-            <svg class="i"><use href="#i-search"/></svg>
-            <input id="searchInput" type="text" placeholder="Filter by tag   -exclude   @name" autocomplete="off" spellcheck="false"
-                   aria-label="Search by tag or name" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest">
-            <button class="icon-btn" id="searchClear" type="button" title="Clear the search" aria-label="Clear the search" hidden><svg class="i"><use href="#i-x"/></svg></button>
-            <span class="kbd" aria-hidden="true">/</span>
-            <div class="suggest" id="suggest" role="listbox" aria-label="Tags" hidden></div>
+<div class="shell app" id="shell">
+    <aside class="side" id="side">
+        <div class="side-head">
+            <span class="brand"><span class="logo"><svg><use href="#i-folder"/></svg></span><span class="wordmark">binny</span></span>
+            <button class="icon-btn side-close" id="sideClose" type="button" title="Close" aria-label="Close the sidebar"><svg class="i"><use href="#i-x"/></svg></button>
         </div>
-        <div class="split" id="upload">
-            <button class="cc-btn cc-btn--primary plus" id="uploadBtn" type="button" title="Upload files (U)" aria-label="Upload files"><svg class="i"><use href="#i-plus"/></svg></button>
-            <button class="cc-btn cc-btn--primary caret" id="uploadCaret" type="button" title="More ways to upload" aria-label="More ways to upload" aria-haspopup="menu" aria-expanded="false" aria-controls="uploadMenu"><svg class="i"><use href="#i-chevron-down"/></svg></button>
-            <div class="menu" id="uploadMenu" role="menu" hidden>
-                <button type="button" role="menuitem" id="fromLink"><svg class="i"><use href="#i-link"/></svg><span><b>Upload from link</b><small>Binny downloads it into this folder</small></span><span class="kbd">L</span></button>
-            </div>
+        <section>
+            <div class="eyebrow">Folders</div>
+            <nav class="nav" id="tree" aria-label="Folders"></nav>
+        </section>
+        <section id="tagSection" hidden>
+            <div class="eyebrow">Tags</div>
+            <nav class="nav tagnav" id="tagNav" aria-label="Tags"></nav>
+        </section>
+        <div class="grow"></div>
+        <div class="storage" id="storage"></div>
+        <div class="side-foot">
+            <nav class="nav" aria-label="Trash">
+                <a class="navrow" id="trashNav" href="#trash" data-trash><svg class="i"><use href="#i-trash"/></svg><span>Trash</span><span class="count" id="trashCount"></span></a>
+            </nav>
+            <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
+            <form class="signout" method="post" action="{{ url_for('auth.logout') }}">
+                <button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out"><svg class="i"><use href="#i-logout"/></svg></button>
+            </form>
         </div>
-        <button class="icon-btn" id="dlBtn" type="button" title="Downloads" aria-label="Downloads" hidden><svg class="i"><use href="#i-download"/></svg><span class="cc-badge cc-badge--count" id="dlBadge" hidden></span></button>
-        <button class="icon-btn" id="themeBtn" type="button" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
-        <form class="signout" method="post" action="{{ url_for('auth.logout') }}">
-            <button class="icon-btn" type="submit" title="Sign out" aria-label="Sign out"><svg class="i"><use href="#i-logout"/></svg></button>
-        </form>
-    </header>
+    </aside>
+    <div class="side-resize" id="sideResize" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the sidebar (double-click to reset)" aria-label="Resize the sidebar" aria-valuemin="200" aria-valuemax="520" aria-valuenow="280"></div>
 
     <div class="body">
-        <aside class="cc-shell__side side" id="side">
-            <button class="icon-btn side-close" id="sideClose" type="button" title="Close" aria-label="Close the sidebar"><svg class="i"><use href="#i-x"/></svg></button>
-            <section>
-                <div class="cc-eyebrow">Folders</div>
-                <nav class="nav" id="tree" aria-label="Folders"></nav>
-            </section>
-            <section id="tagSection" hidden>
-                <div class="cc-eyebrow">Tags</div>
-                <nav class="nav" id="tagNav" aria-label="Tags"></nav>
-            </section>
-            <nav class="nav" aria-label="Trash">
-                <a class="cc-shell__row" id="trashNav" href="#trash" data-trash><svg class="i"><use href="#i-trash"/></svg><span>Trash</span><span class="count" id="trashCount"></span></a>
-            </nav>
-            <div class="grow"></div>
-            <div class="storage" id="storage"></div>
-            {# On phones the top bar has no room for these, so the drawer has them. #}
-            <nav class="nav side-actions" aria-label="Theme and sign-out">
-                <button class="cc-shell__row" type="button" data-switch-theme><svg class="i"><use href="#i-sun"/></svg><span>Switch theme</span></button>
-                <form method="post" action="{{ url_for('auth.logout') }}"><button class="cc-shell__row" type="submit"><svg class="i"><use href="#i-logout"/></svg><span>Sign out</span></button></form>
-            </nav>
-        </aside>
-        <div class="side-resize" id="sideResize" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the sidebar (double-click to reset)" aria-label="Resize the sidebar" aria-valuemin="200" aria-valuemax="520" aria-valuenow="280"></div>
+        <header class="topbar" id="topbar">
+            <button class="icon-btn" id="sideBtn" type="button" title="Menu" aria-label="Open the sidebar"><svg class="i"><use href="#i-menu"/></svg></button>
+            <span class="brand"><span class="wordmark">binny</span></span>
+            <div class="search" id="searchBox">
+                <svg class="i"><use href="#i-search"/></svg>
+                <input id="searchInput" type="text" placeholder="Search by tag, -tag or @name" autocomplete="off" spellcheck="false"
+                       aria-label="Search by tag or name" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggest">
+                <button class="icon-btn" id="searchClear" type="button" title="Clear the search" aria-label="Clear the search" hidden><svg class="i"><use href="#i-x"/></svg></button>
+                <span class="kbd" aria-hidden="true">/</span>
+                <div class="suggest" id="suggest" role="listbox" aria-label="Tags" hidden></div>
+            </div>
+            <button class="icon-btn" id="dlBtn" type="button" title="Downloads" aria-label="Downloads" hidden><svg class="i"><use href="#i-download"/></svg><span class="badge badge--count" id="dlBadge" hidden></span></button>
+            <div class="split" id="upload">
+                <button class="btn btn--primary plus" id="uploadBtn" type="button" title="Upload files (U)" aria-label="Upload files"><svg class="i"><use href="#i-plus"/></svg><span class="label">Upload</span></button>
+                <button class="btn btn--primary caret" id="uploadCaret" type="button" title="More ways to upload" aria-label="More ways to upload" aria-haspopup="menu" aria-expanded="false" aria-controls="uploadMenu"><svg class="i"><use href="#i-chevron-down"/></svg></button>
+                <div class="menu" id="uploadMenu" role="menu" hidden>
+                    <button type="button" role="menuitem" id="fromLink"><svg class="i"><use href="#i-link"/></svg><span><b>Upload from link</b><small>Binny downloads it into this folder</small></span><span class="kbd">L</span></button>
+                </div>
+            </div>
+        </header>
 
-        <main class="cc-shell__main" id="main">
+        <main class="main" id="main">
             <section class="view" id="filesView">
                 <div class="subbar">
                     <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
                     <div class="summary" id="summary"></div>
-                    <div class="grow"></div>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="newFolderBtn" type="button" title="New folder (N)"><svg class="i"><use href="#i-folder-plus"/></svg><span>New folder</span></button>
+                    <button class="btn btn--ghost" id="newFolderBtn" type="button" title="New folder (N)"><svg class="i"><use href="#i-folder-plus"/></svg><span>New folder</span></button>
                 </div>
                 <div class="list" id="list"></div>
                 <div class="selbar" id="selbar" hidden>
                     <b id="selCount"></b>
-                    <div class="grow"></div>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selTag" type="button" title="Tags (T)" aria-label="Tags"><svg class="i"><use href="#i-tag"/></svg><span>Tag</span></button>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selRename" type="button" title="Rename (R)" aria-label="Rename"><svg class="i"><use href="#i-rename"/></svg><span>Rename</span></button>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selMove" type="button" title="Move (M)" aria-label="Move to"><svg class="i"><use href="#i-move"/></svg><span>Move to…</span></button>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="selDownload" type="button" title="Download (S)" aria-label="Download"><svg class="i"><use href="#i-download"/></svg><span id="selDownloadLabel">Download</span></button>
-                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="selTrash" type="button" title="Move to trash (Del)" aria-label="Move to trash"><svg class="i"><use href="#i-trash"/></svg><span>Trash</span></button>
-                    <button class="cc-btn cc-btn--sm" id="selClear" type="button" title="Clear the selection (Esc)" aria-label="Clear the selection"><svg class="i"><use href="#i-x"/></svg><span>Clear</span></button>
+                    <button class="btn" id="selTag" type="button" title="Tags (T)" aria-label="Tags"><svg class="i"><use href="#i-tag"/></svg><span>Tags</span></button>
+                    <button class="btn" id="selRename" type="button" title="Rename (R)" aria-label="Rename"><svg class="i"><use href="#i-rename"/></svg><span>Rename</span></button>
+                    <button class="btn" id="selMove" type="button" title="Move (M)" aria-label="Move to"><svg class="i"><use href="#i-move"/></svg><span>Move</span></button>
+                    <button class="btn" id="selDownload" type="button" title="Download (S)" aria-label="Download"><svg class="i"><use href="#i-download"/></svg><span id="selDownloadLabel">Download</span></button>
+                    <button class="btn danger" id="selTrash" type="button" title="Move to trash (Del)" aria-label="Move to trash"><svg class="i"><use href="#i-trash"/></svg><span>Trash</span></button>
+                    <button class="btn clear" id="selClear" type="button" title="Clear the selection (Esc)" aria-label="Clear the selection"><svg class="i"><use href="#i-x"/></svg></button>
                 </div>
             </section>
 
             <section class="view" id="trashView" hidden>
                 <div class="subbar">
-                    <div class="crumbs"><b>trash</b></div>
+                    <div class="crumbs"><b>Trash</b></div>
                     <div class="summary" id="trashSummary"></div>
-                    <div class="grow"></div>
-                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="emptyTrashBtn" type="button"><svg class="i"><use href="#i-trash"/></svg><span>Empty trash</span></button>
+                    <button class="btn btn--danger" id="emptyTrashBtn" type="button"><svg class="i"><use href="#i-trash"/></svg><span>Empty trash</span></button>
                 </div>
                 <div class="list" id="trashList"></div>
                 <div class="selbar" id="trashSelbar" hidden>
                     <b id="trashSelCount"></b>
-                    <div class="grow"></div>
-                    <button class="cc-btn cc-btn--ghost cc-btn--sm" id="trashSelRestore" type="button" title="Restore" aria-label="Restore"><svg class="i"><use href="#i-restore"/></svg><span>Restore</span></button>
-                    <button class="cc-btn cc-btn--danger cc-btn--sm" id="trashSelDelete" type="button" title="Delete forever (Del)" aria-label="Delete forever"><svg class="i"><use href="#i-trash"/></svg><span>Delete forever</span></button>
-                    <button class="cc-btn cc-btn--sm" id="trashSelClear" type="button" title="Clear the selection (Esc)" aria-label="Clear the selection"><svg class="i"><use href="#i-x"/></svg><span>Clear</span></button>
+                    <button class="btn" id="trashSelRestore" type="button" title="Restore" aria-label="Restore"><svg class="i"><use href="#i-restore"/></svg><span>Restore</span></button>
+                    <button class="btn danger" id="trashSelDelete" type="button" title="Delete forever (Del)" aria-label="Delete forever"><svg class="i"><use href="#i-trash"/></svg><span>Delete forever</span></button>
+                    <button class="btn clear" id="trashSelClear" type="button" title="Clear the selection (Esc)" aria-label="Clear the selection"><svg class="i"><use href="#i-x"/></svg></button>
                 </div>
             </section>
         </main>
@@ -95,7 +91,7 @@
 
     <div class="drop-hint" id="dropHint" hidden><svg class="i"><use href="#i-upload"/></svg><span id="dropHintText"></span></div>
 
-    <section class="cc-settings-card uploads" id="uploads" hidden aria-live="polite">
+    <section class="card uploads" id="uploads" hidden aria-live="polite">
         <div class="uploads__top">
             <svg class="i"><use href="#i-upload"/></svg>
             <b id="uploadTitle"></b>
@@ -114,60 +110,60 @@
 
 <div class="toast" id="toast" role="status" popover="manual"></div>
 
-<dialog class="cc-settings-card dialog" id="askDialog" aria-labelledby="askTitle">
+<dialog class="card dialog" id="askDialog" aria-labelledby="askTitle">
     <form>
-        <header class="cc-card-header"><svg><use id="askIcon" href="#i-rename"/></svg><h4 id="askTitle"></h4></header>
+        <header class="card-header"><svg><use id="askIcon" href="#i-rename"/></svg><h4 id="askTitle"></h4></header>
         <p id="askText"></p>
-        <input class="cc-input" id="askInput" autocomplete="off" spellcheck="false" aria-labelledby="askTitle">
+        <input class="input" id="askInput" autocomplete="off" spellcheck="false" aria-labelledby="askTitle">
         <div class="row-btns">
-            <button class="cc-btn cc-btn--ghost" type="button" data-close><span>Cancel</span></button>
-            <button class="cc-btn cc-btn--primary" id="askOk" type="submit"><span>OK</span></button>
+            <button class="btn btn--ghost" type="button" data-close><span>Cancel</span></button>
+            <button class="btn btn--primary" id="askOk" type="submit"><span>OK</span></button>
         </div>
     </form>
 </dialog>
 
-<dialog class="cc-settings-card dialog tagger" id="tagDialog" aria-labelledby="tagTitle">
+<dialog class="card dialog tagger" id="tagDialog" aria-labelledby="tagTitle">
     <form>
-        <header class="cc-card-header"><svg><use href="#i-tag"/></svg><h4 id="tagTitle">Tags</h4><small id="tagWhat"></small></header>
+        <header class="card-header"><svg><use href="#i-tag"/></svg><h4 id="tagTitle">Tags</h4><small id="tagWhat"></small></header>
         <div class="chips" id="tagCurrent"></div>
-        <input class="cc-input" id="tagInput" placeholder="tag   +new   -remove   old>new" autocomplete="off" spellcheck="false" aria-label="Tags to add or take off" aria-describedby="tagPlan">
+        <input class="input" id="tagInput" placeholder="tag   +new   -remove   old>new" autocomplete="off" spellcheck="false" aria-label="Tags to add or take off" aria-describedby="tagPlan">
         <ul class="plan" id="tagPlan" hidden></ul>
         <div class="tagger__suggest" id="tagSuggestBox">
             <div class="tagger__label" id="tagSuggestLabel"></div>
             <div class="chips" id="tagSuggest"></div>
         </div>
         <div class="row-btns">
-            <button class="cc-btn cc-btn--primary" id="tagApply" type="submit"><span>Done</span></button>
+            <button class="btn btn--primary" id="tagApply" type="submit"><span>Done</span></button>
         </div>
     </form>
 </dialog>
 
 <dialog class="panel" id="dlPanel" aria-labelledby="dlTitle">
-    <header class="cc-card-header">
+    <header class="card-header">
         <svg><use href="#i-link"/></svg><h4 id="dlTitle">Upload from link</h4>
-        <div class="cc-card-header__end"><button class="icon-btn" type="button" data-close title="Close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="card-header__end"><button class="icon-btn" type="button" data-close title="Close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
     </header>
     <div class="panel__body">
         <form id="dlForm" novalidate>
             <div class="field">
                 <label for="dlUrl">Link</label>
-                <input class="cc-input" id="dlUrl" type="url" placeholder="https://example.com/file.iso" autocomplete="off" spellcheck="false">
+                <input class="input" id="dlUrl" type="url" placeholder="https://example.com/file.iso" autocomplete="off" spellcheck="false">
             </div>
             <div class="field">
                 <label for="dlFolder">Save to</label>
-                <select class="cc-input" id="dlFolder"></select>
-                <span class="cc-field__hint">The server does the downloading, so you can close this tab.</span>
+                <select class="input" id="dlFolder"></select>
+                <span class="hint">The server does the downloading, so you can close this tab.</span>
             </div>
             <div class="field">
                 <label for="dlTags">Tags</label>
-                <input class="cc-input" id="dlTags" type="text" placeholder="optional, e.g. iso linux" autocomplete="off" spellcheck="false">
+                <input class="input" id="dlTags" type="text" placeholder="optional, e.g. iso linux" autocomplete="off" spellcheck="false">
             </div>
-            <button class="cc-btn cc-btn--primary cc-btn--block" id="dlStart" type="submit"><svg class="i"><use href="#i-download"/></svg><span>Start download</span></button>
+            <button class="btn btn--primary btn--block" id="dlStart" type="submit"><svg class="i"><use href="#i-download"/></svg><span>Start download</span></button>
         </form>
         <section aria-labelledby="dlListTitle">
             <div class="panel__head">
-                <div class="cc-eyebrow" id="dlListTitle">Downloads</div>
-                <button class="cc-btn cc-btn--ghost cc-btn--sm" id="dlClear" type="button" hidden><span>Clear finished</span></button>
+                <div class="eyebrow" id="dlListTitle">Downloads</div>
+                <button class="btn btn--ghost btn--sm" id="dlClear" type="button" hidden><span>Clear finished</span></button>
             </div>
             <p class="panel__none" id="dlNone">Nothing downloaded yet.</p>
             <div class="dls" id="dlList"></div>
@@ -175,14 +171,14 @@
     </div>
 </dialog>
 
-<dialog class="cc-settings-card dialog" id="moveDialog" aria-labelledby="moveTitle">
+<dialog class="card dialog" id="moveDialog" aria-labelledby="moveTitle">
     <form>
-        <header class="cc-card-header"><svg><use href="#i-move"/></svg><h4 id="moveTitle"></h4></header>
+        <header class="card-header"><svg><use href="#i-move"/></svg><h4 id="moveTitle"></h4></header>
         <nav class="crumbs" id="moveCrumbs" aria-label="Destination path"></nav>
         <div class="picker" id="movePicker"></div>
         <div class="row-btns">
-            <button class="cc-btn cc-btn--ghost" type="button" data-close><span>Cancel</span></button>
-            <button class="cc-btn cc-btn--primary" id="moveHere" type="submit"><span>Move here</span></button>
+            <button class="btn btn--ghost" type="button" data-close><span>Cancel</span></button>
+            <button class="btn btn--primary" id="moveHere" type="submit"><span>Move here</span></button>
         </div>
     </form>
 </dialog>

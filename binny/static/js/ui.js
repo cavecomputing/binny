@@ -69,7 +69,7 @@ export function ask({ title, iconName, text = '', value = null, select, ok = 'OK
     input.hidden = value === null;
     input.value = value ?? '';
     okButton.firstElementChild.textContent = ok;
-    okButton.className = `cc-btn ${danger ? 'cc-btn--danger' : 'cc-btn--primary'}`;
+    okButton.className = `btn ${danger ? 'btn--danger' : 'btn--primary'}`;
     dialog.showModal(); // a yes/no question starts on Cancel
     if (value !== null) {
         input.focus();

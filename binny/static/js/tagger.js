@@ -109,7 +109,7 @@ function render() {
         tags = allTags().map(({ tag }) => tag).filter((tag) => have(tag) < n).slice(0, SUGGESTIONS);
     }
     $('tagSuggestLabel').textContent = label;
-    $('tagSuggest').innerHTML = tags.map((tag) => `<button class="cc-tag" type="button" data-tag="${esc(tag)}"><span>${highlight(tag, term)}</span><small>${tagCount(tag).toLocaleString()}</small></button>`).join('');
+    $('tagSuggest').innerHTML = tags.map((tag) => `<button class="tag" type="button" data-tag="${esc(tag)}"><span>${highlight(tag, term)}</span><small>${tagCount(tag).toLocaleString()}</small></button>`).join('');
     $('tagSuggestBox').hidden = !tags.length;
     $('tagApply').firstElementChild.textContent = text.trim() ? 'Apply' : 'Done';
 }

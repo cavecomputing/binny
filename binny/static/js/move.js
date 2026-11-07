@@ -34,7 +34,7 @@ export function openMove(paths) {
 /** Show folder's subfolders in the dialog. A folder being moved can't be entered: nothing goes inside itself. */
 async function browse(folder) {
     browsing = folder;
-    const crumb = (path) => `<button type="button" data-browse="${esc(path)}">${esc(path ? nameOf(path) : 'files')}</button>`;
+    const crumb = (path) => `<button type="button" data-browse="${esc(path)}">${esc(path ? nameOf(path) : 'Files')}</button>`;
     $('moveCrumbs').innerHTML = ['', ...ancestors(folder)].map(crumb).join('<span>/</span>');
     $('moveHere').disabled = moving.every((path) => parentOf(path) === folder);
     let tree;

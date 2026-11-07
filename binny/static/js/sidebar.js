@@ -29,7 +29,7 @@ export async function loadTree() {
     }
     if (request !== latest) return;
 
-    const rows = [treeRow({ path: '', name: 'files' }, 0, folder, open)];
+    const rows = [treeRow({ path: '', name: 'Files' }, 0, folder, open)];
     const walk = (parent, depth) => {
         for (const sub of (data.tree[parent] ?? []).sort(byName)) {
             rows.push(treeRow(sub, depth, folder, open));
@@ -56,7 +56,7 @@ function treeRow(sub, depth, folder, open) {
         ? `<button class="twisty" type="button" data-toggle="${esc(sub.path)}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${esc(sub.name)}">${icon('chevron-right')}</button>`
         : '<span class="twisty"></span>';
     const current = sub.path === folder && !isTrash() && currentSearch() === null;
-    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="cc-shell__row" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${current ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
+    return `<div class="tree-row" style="--depth: ${depth}">${twisty}<a class="navrow" href="${esc(folderHash(sub.path))}" data-drop="${esc(sub.path)}"${current ? ' aria-current="page"' : ''}>${icon('folder')}<span>${esc(sub.name)}</span></a></div>`;
 }
 
 function toggleBranch(path, wasOpen) {

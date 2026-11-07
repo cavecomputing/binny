@@ -11,7 +11,7 @@ import { $, formatSize, icon, showError } from './ui.js';
 
 const POLL_EVERY = 1000;
 const RUNNING = new Set(['queued', 'downloading', 'cancelling']);
-const BADGES = { downloading: 'cc-badge--open', done: 'cc-badge--done', failed: 'cc-badge--warn' };
+const BADGES = { downloading: 'badge--open', done: 'badge--done', failed: 'badge--warn' };
 
 let downloads = []; // as /api/downloads lists them, newest first
 let seen = new Map(); // id -> state at the last look, to notice one finishing
@@ -62,7 +62,7 @@ function newCard(id) {
     card.dataset.id = id;
     card.innerHTML = `
         <div class="dl__top">
-            <b class="dl__name"></b><span class="cc-badge"></span>
+            <b class="dl__name"></b><span class="badge"></span>
             <button class="icon-btn" type="button" data-cancel title="Cancel" aria-label="Cancel this download">${icon('x')}</button>
         </div>
         <div class="bar"><i></i></div>
@@ -77,8 +77,8 @@ function update(card, job) {
     card.className = `dl dl--${job.state}`;
     part('.dl__name').textContent = job.name;
     part('.dl__name').title = job.url;
-    part('.cc-badge').className = `cc-badge ${BADGES[job.state] ?? ''}`;
-    part('.cc-badge').textContent = job.state !== 'downloading' ? job.state : job.size ? `${percent}%` : formatSize(job.received);
+    part('.badge').className = `badge ${BADGES[job.state] ?? ''}`;
+    part('.badge').textContent = job.state !== 'downloading' ? job.state : job.size ? `${percent}%` : formatSize(job.received);
     part('[data-cancel]').hidden = job.state !== 'queued' && job.state !== 'downloading';
     part('.bar').classList.toggle('bar--busy', job.state === 'downloading' && !job.size);
     part('.bar i').style.width = `${job.state === 'done' ? 100 : percent}%`;
