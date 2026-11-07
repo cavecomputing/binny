@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -329,6 +330,9 @@ func TestARunningDownloadCancels(t *testing.T) {
 }
 
 func TestADownloadWhoseFolderMovesFails(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows won't move a folder while a file in it is open, so a download's folder can't move")
+	}
 	m := newManager(t)
 	m.checkEvery = 1 // so the folder check comes at once, not every 64 MB
 	if err := m.disk.Mkdir("docs", 0o777); err != nil {
