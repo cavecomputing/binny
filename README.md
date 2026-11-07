@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="binny/static/favicon.svg" alt="" width="112">
+  <img src="web/static/favicon.svg" alt="" width="112">
 </p>
 
 <h1 align="center">Binny</h1>
@@ -34,16 +34,19 @@ the tags and what's in the trash.
 
 ## Quick start
 
-All you need is Git and [uv](https://docs.astral.sh/uv/).
+All you need is Git and [Go](https://go.dev/dl/) 1.27 or later. Binny builds into one file, `binny`,
+with the page and everything it needs inside it.
 
 ```bash
 git clone https://github.com/cavecomputing/binny.git
 cd binny
-uv sync
-BINNY_PASSWORD=pick-one uv run app.py
+go build
+BINNY_PASSWORD=pick-one ./binny
 ```
 
-Then open <http://localhost:5000> and sign in with that password.
+Then open <http://localhost:5000> and sign in with that password. The files go in `data/` next to
+where you started it, unless `BINNY_DATA_DIR` names another folder; `-host` and `-port` change
+where it listens.
 
 To run Binny with Docker instead, put the password in `docker/.env`:
 
@@ -62,7 +65,7 @@ Back up `data/`, stop Binny, then run:
 
 ```bash
 git pull
-uv sync
+go build
 ```
 
 and start it again with the same password. With Docker, run `git pull`, then the same
@@ -85,7 +88,7 @@ Open Binny on your phone at the address Caddy serves it on. To try it on your ne
 Caddy, let it listen on every address:
 
 ```bash
-BINNY_PASSWORD=pick-one uv run app.py --host 0.0.0.0
+BINNY_PASSWORD=pick-one ./binny -host 0.0.0.0
 ```
 
 Then open `http://<computer's LAN address>:5000` on a phone on the same network. Only do this on a
