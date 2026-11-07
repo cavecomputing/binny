@@ -108,12 +108,14 @@ buries the real diff under noise.
 
 ## Run / test
 
-Go backend, vanilla-JS frontend with no build step: SQLite, one binary, Docker.
+Go backend, vanilla-JS frontend with no build step: SQLite, one binary, Docker. It runs on Linux
+and Windows, so code that touches the system has to build and pass its tests on both.
 
 ```bash
 BINNY_PASSWORD=dev go run .                    # dev server on 127.0.0.1:5000 (-host / -port to change)
 BINNY_DATA_DIR=/path/to/data BINNY_PASSWORD=dev go run .   # data directory (default: ./data)
 go build                                       # ./binny, with the page and static files inside it
+GOOS=windows go vet ./...                      # does it still build for Windows (tests included)?
 
 go test ./...                                  # full suite, the end-to-end test included
 go test -run TestEndToEnd .                    # just the end-to-end test: a day in the life over real HTTP
@@ -156,7 +158,7 @@ packages need it) rather than growing a neighbour. Packages depend downwards onl
 | Path | Owns |
 |---|---|
 | `main.go` | Entry point: reads `BINNY_DATA_DIR`, `BINNY_PASSWORD` and the `-host`/`-port` flags, opens the disk and the database, starts the startup scan of `data/files/` in a goroutine, and serves. No logic lives here. |
-| `internal/storage/` | The one way to the files: `Disk`, an `os.Root` on `data/files/`, so no path leads out of it (`Plain()` for what counts as an item — a file or folder, never a symlink, pipe or device — `IsFolder()`, `FreeName()` for "name (1).ext" under `NameLock`, `MakeFolders()`, `Usage()`); the rules for client paths and names (`CleanPath()`, `CheckName()`, `Numbered()`, `PartialName()` for the hidden file a new file is written to); kinds and content types by extension (`KindOf()`, `ContentType()`); and `Problem()`, what the system said went wrong. |
+| `internal/storage/` | The one way to the files: `Disk`, an `os.Root` on `data/files/`, so no path leads out of it (`Plain()` for what counts as an item — a file or folder, never a symlink, pipe or device — `IsFolder()`, `FreeName()` for "name (1).ext" under `NameLock`, `MakeFolders()`, `Usage()`, the one part written for each system: `usage_unix.go`, `usage_windows.go`); the rules for client paths and names (`CleanPath()`, `CheckName()`, `Numbered()`, `PartialName()` for the hidden file a new file is written to); kinds and content types by extension (`KindOf()`, `ContentType()`); and `Problem()`, what the system said went wrong. |
 | `internal/db/` | `binny.db`: the schema (`Open()`, idempotent) and one `*sql.DB`; `Update()` runs a function in a transaction, and `DB` and `Tx` share the query methods. `entries.go` is Binny's index of the disk (`Refresh()` on every listing, `IndexTree()` on start, `Record()` for what the app adds, `MoveRows()` for renames and moves, `FolderTotals()`, `List()`); its scans delete partial files left behind. `tags.go` is the tags (`CleanTag()`, `Tags()`, `MoveTags()` and `DropTags()`, which keep tags with an item through renames, moves and the trash, renaming or deleting a tag everywhere, and `Search()`), `trash.go` the trash records, `folders.go` the sidebar's tree. |
 | `internal/auth/` | The login: the sign-in and sign-out handlers, `Require()` in front of everything else, and the signed session cookie. |
 | `internal/archive/` | Zips streamed to the browser while they're written. |

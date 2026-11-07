@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"syscall"
 	"testing"
 )
 
@@ -182,9 +181,7 @@ func TestAPipeIs404AndLeftOutOfAZip(t *testing.T) {
 	a := newApp(t)
 	viewsStore(a)
 	trip := filepath.Join(a.files, "trip")
-	if err := syscall.Mkfifo(filepath.Join(trip, "pipe"), 0o666); err != nil {
-		t.Fatal(err)
-	}
+	makePipe(t, filepath.Join(trip, "pipe"))
 	if err := os.Symlink(filepath.Join(trip, "a.txt"), filepath.Join(trip, "link.txt")); err != nil {
 		t.Fatal(err)
 	}

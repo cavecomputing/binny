@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"syscall"
 	"testing"
 )
 
@@ -283,9 +282,7 @@ func TestPlainAndIsFolder(t *testing.T) {
 	if err := os.Symlink("folder", filepath.Join(files, "link")); err != nil {
 		t.Fatal(err)
 	}
-	if err := syscall.Mkfifo(filepath.Join(files, "pipe"), 0o666); err != nil {
-		t.Fatal(err)
-	}
+	makePipe(t, filepath.Join(files, "pipe"))
 	for _, tc := range []struct {
 		path            string
 		plain, isFolder bool
